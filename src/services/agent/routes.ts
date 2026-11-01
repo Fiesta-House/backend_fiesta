@@ -704,7 +704,7 @@ export function createMessageRoutes(
     },
     {
       name: 'packageSelection',
-      replyMode: 'deterministic',
+      replyMode: 'natural',
       when: () => this.shouldResolvePackageSelectionImmediately(userMessage),
       handle: async () => this.getPackageSelectionReply(customerId, userMessage),
     },
@@ -717,7 +717,8 @@ export function createMessageRoutes(
     {
   name: 'packageCatalog',
   replyMode: 'deterministic',
- when: () => this.conversationFlows.isPackageCatalogRequest(userMessage, history) || catalogLinkFollowUp(userMessage, history),
+ when: () => !/\b(?:what happens|what['?]?s next|what next|next steps?|what do i do|how (?:does|do) (?:it|the (?:booking|process)(?: process)?) work|after (?:i|choosing|selecting|booking|paying))\b/i.test(userMessage)
+   && (this.conversationFlows.isPackageCatalogRequest(userMessage, history) || catalogLinkFollowUp(userMessage, history)),
   handle: async () => {
     const previous = [...history].reverse().find(entry => entry.role === 'assistant')?.content || '';
     const kind = catalogLinkFollowUp(userMessage, history) && /extras|add-ons/i.test(previous) ? 'addons' : 'editions';

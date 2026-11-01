@@ -1767,7 +1767,7 @@ If instructions conflict, apply this priority: [A] Hard Constraints > [B] Tool-U
 
 [A] HARD CONSTRAINTS (non-negotiable)
 
-A1. PLATFORM: you are talking to the customer on "${platform}". On "instagram" or "facebook" you CANNOT make bookings and must not start gathering name, service, date or time; as soon as she wants to book, politely say bookings are only accepted via WhatsApp and point her to the WhatsApp link or button on our profile. On "whatsapp" or "web" the booking flow in [B] is available.
+A1. PLATFORM: you are talking to the customer on "${platform}". On "instagram" or "facebook" you CANNOT make bookings and must not start gathering name, service, date or time. When she first wants to book, answer anything she asked about the edition or session, then explain kindly that bookings are only taken on WhatsApp and point her to the WhatsApp link or button on our profile. Say this once: do not repeat it after thanks, small talk or studio questions, and repeat it only if she asks to book again. On "whatsapp" or "web" the booking flow in [B] is available.
 
 A2. We are CLOSED on Mondays. Never allow a Monday booking.
 
@@ -1848,6 +1848,12 @@ D1. ABOUT YOU: if she asks who you are or what you do, say you are Fiesta House 
 ${BRAND_RULES}
 ${VOICE_RULES}
 ${EMOJI_PROMPT_RULE}
+
+D11. VARIETY AND ENDINGS: never open or close two replies in a row with the same wording, and treat any sample wording in these instructions as an illustration to rephrase, never a line to copy. When she thanks you or signs off, close warmly in a sentence or two and stop: no new offer, no booking prompt and no WhatsApp reminder unless she asks. Let the conversation breathe; you do not need to move her anywhere.
+
+D12. WHEN SHE QUESTIONS YOU: if she challenges something you said ("are you sure?", "really?"), re-check it against Business Context. If it is not explicitly supported, say so plainly, correct yourself and say the team will confirm. Never repeat or embellish an answer with specifics (particular accessories, items or inclusions) that Business Context does not state.
+
+D13. LIGHT TOUCH: for small talk about the studio itself (how business is, how the team is), answer warmly and briefly without stating how busy the team is or how many clients it has. When directing a customer to our work, share our Instagram handle @fiestahousematernity and the website link. Do not offer to point her to particular sections or pages unless you have a verified link. Answer the question she actually asked before suggesting another step. Do not turn acknowledgements, thank-yous or natural conversation endings into booking prompts. Vary your wording naturally; avoid repetitive greetings, introductions, sales language and calls to action. Never force a booking question into an informational conversation.
 
 D4. FORMAT AND LENGTH: plain WhatsApp text that is easy to read on mobile, usually 2 to 4 sentences and under about 800 characters. Use a list only when asked or clearly clearer. Never dump irrelevant context.
 
@@ -2356,7 +2362,7 @@ ${contextString}`;
     const completionParams = {
       model: CHAT_MODEL,
       messages,
-      temperature: 0.3,
+      temperature: 0.5,
       max_completion_tokens: MAX_AGENT_COMPLETION_TOKENS,
       ...(allTools.length > 0 ? { tools: allTools, tool_choice: nextWeekAvailability
         ? { type: 'function' as const, function: { name: 'get_available_dates' } }
@@ -2995,6 +3001,11 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
    * Recognises a customer's M-Pesa confirmation while a Till payment is pending.
    * Sends the original message and booking details to the existing team escalation system.
    */
+  /**
+   * Recognises M-Pesa receipts. A complete confirmation SMS can be forwarded
+   * for team verification even when an old or unrelated draft is present.
+   * A bare transaction code is accepted only while a Till payment is pending.
+   */
   private async captureMpesaMessage(
     customerId: string,
     userMessage: string,
@@ -3004,20 +3015,32 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
 
     try {
       const draft = await prisma.bookingDraft.findUnique({ where: { customerId } });
-
-      if (draft?.step !== 'awaiting_payment_message') return 'not_waiting';
-
+      const awaitingPaymentMessage = draft?.step === 'awaiting_payment_message';
       const parsed = parseMpesaMessage(userMessage);
+
       const hasPaymentDetails =
-        /\b(?:Ksh|KES)\b/i.test(userMessage) ||
-        /\b(?:paid to|sent to|confirmed)\b/i.test(userMessage);
+        /\\b(?:Ksh|KES)\\b/i.test(userMessage) ||
+        /\\b(?:paid to|sent to|confirmed|received)\\b/i.test(userMessage);
 
       const looksLikeMpesaReceipt =
         Boolean(parsed.code) ||
-        (/\bM[\s-]?PESA\b/i.test(userMessage) && hasPaymentDetails) ||
-        (hasPaymentDetails && /\b(?:transaction|receipt)\b/i.test(userMessage));
+        (/\\bM[\\s-]?PESA\\b/i.test(userMessage) && hasPaymentDetails) ||
+        (hasPaymentDetails && /\\b(?:transaction|receipt)\\b/i.test(userMessage));
 
-      if (!looksLikeMpesaReceipt) return 'waiting';
+      // A full SMS needs an amount, confirmation wording and payment context.
+      // This also recognises messages phrased as "received from Fiesta House..."
+      const isCompleteReceiptSms =
+        /\\b(?:Ksh|KES)\\b/i.test(userMessage) &&
+        /\\b(?:confirmed|received|successful|paid|sent)\\b/i.test(userMessage) &&
+        /\\b(?:M[\\s-]?PESA|till|buy goods|fiesta|transaction|receipt)\\b/i.test(userMessage);
+
+      const shouldCapture =
+        looksLikeMpesaReceipt &&
+        (awaitingPaymentMessage || isCompleteReceiptSms);
+
+      if (!shouldCapture) {
+        return awaitingPaymentMessage ? 'waiting' : 'not_waiting';
+      }
 
       await this.escalate(
         customerId,
@@ -3025,14 +3048,20 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
         JSON.stringify({
           event: 'mpesa_payment_message_received',
           ...parsed,
-          booking: {
-            service: draft.service,
-            date: draft.date,
-            time: draft.time,
-            name: draft.name,
-          },
+          booking: awaitingPaymentMessage
+            ? {
+                service: draft.service,
+                date: draft.date,
+                time: draft.time,
+                name: draft.name,
+              }
+            : null,
+          draftStep: draft?.step ?? null,
+          requiresManualMatching: !awaitingPaymentMessage,
           customerMessage: userMessage.slice(0, 2000),
-          action: 'Verify this transaction against the M-Pesa statement before confirming the booking.',
+          action: awaitingPaymentMessage
+            ? 'Verify this transaction against the M-Pesa statement and the pending booking before confirming payment.'
+            : 'No matching payment-waiting draft was found. Match this receipt against the M-Pesa statement and any outstanding customer payment manually. Do not associate it with an unrelated or stale draft, and do not confirm payment until verified.',
         })
       );
 
