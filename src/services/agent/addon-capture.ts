@@ -1,6 +1,7 @@
 import { ADDON_CATALOG, type AddonCatalogItem } from '../../config/constants';
 import { ADDON_MAKEUP_CLARIFICATION, ADDON_MULTI_CLARIFICATION, ADDON_QUOTED_PRICE_LABEL } from './constants';
 import { normalizeQuotes } from './regex';
+import { resolveCalendarDate } from './extraction';
 import { stripAssistantEmojis } from './emoji-policy';
 
 type Message = { role: 'user' | 'assistant'; content: string };
@@ -48,7 +49,8 @@ export function selectedAddons(message: string, history: Message[] = []): AddonC
   if (choosing && matches.length) return matches;
   if (clauses.length === 0 || declined(text)) return [];
   const discussed = ADDON_CATALOG.filter((item) => item.match.test(lastAssistant));
-  if (choosing && /\b(?:it|them|that|those|this|one|ones)\b/.test(text) && discussed.length === 1) return discussed;
+  const hasCalendarSignal = Boolean(resolveCalendarDate(text)) || /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|today|tomorrow|weekend|dates?|times?|\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b/i.test(text);
+  if (choosing && !hasCalendarSignal && /\b(?:it|them|that|those|this|one|ones)\b/.test(text) && discussed.length === 1) return discussed;
   const affirmative = /^(?:yes+|yeah+|yep+|yup|sure|okay|ok)(?:\s*,?\s*(?:that's|that is|thats)\s+(?:what\s+i\s+want|what\s+i'd\s+like))?[.! ]*$/i.test(text.trim());
   const offered = /\b(?:would you like|shall (?:i|we))\b.*\b(?:add|include)\b|\bif\s+you(?:'|’)d\s+like\b[\s\S]{0,160}\b(?:we|i)\s+can\s+(?:add|include)\b/i.test(lastAssistant);
   return affirmative && offered && discussed.length === 1 ? discussed : [];

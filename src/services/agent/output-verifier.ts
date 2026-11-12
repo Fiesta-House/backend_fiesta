@@ -168,9 +168,16 @@ export function verifyModelReply(
     && requestedEditions.length <= 2
     && /\b(?:tell me about|include|includes|inclusions|details|compare|difference|how much|price|cost)\b/i.test(facts.customerMessage || '');
 
+  const hasCatalogListingFormat = (
+    currencyAmounts(validationReply).length >= 2 ||
+    /^\s*[-*•]\s+/m.test(reply) ||
+    /\b(?:kshs?|kes|shs)\b/i.test(reply) ||
+    /\b(?:edition|package):\s+/i.test(reply)
+  );
+
   if (!facts.catalogListAllowed && (
-    editionCount >= 3
-    || addonCount >= 3 && !specificEditionAnswer
+    (editionCount >= 3 && hasCatalogListingFormat)
+    || (addonCount >= 3 && !specificEditionAnswer && hasCatalogListingFormat)
   )) {
     reasons.add('catalog_dump');
   }
@@ -410,10 +417,13 @@ export async function verifyWithOneRetry(
     `[AGENT_FLOW] verifier=blocked ${blockedLog(first.reasons, first.rejectedAmounts, facts)}`,
   );
 
+  const hasNonCatalogInquiry = /\b(?:about (?:the |your )?business|who|what (?:do|is)|wife|husband|partner|friend|sister|brother|book for|how do|services?)\b/i.test(facts.customerMessage || '');
+
   if (
     first.reasons.length === 1
     && first.reasons[0] === 'catalog_dump'
     && !isAddonRecommendationRequest(facts.customerMessage)
+    && !hasNonCatalogInquiry
   ) {
     return { reply: catalogLinkReply(original), blocked: false };
   }
@@ -437,6 +447,7 @@ export async function verifyWithOneRetry(
     !retryFailed
     && second.reasons.length === 1
     && second.reasons[0] === 'catalog_dump'
+    && !hasNonCatalogInquiry
   ) {
     return { reply: catalogLinkReply(corrected), blocked: false };
   }

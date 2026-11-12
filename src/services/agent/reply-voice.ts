@@ -46,11 +46,22 @@ export function repeatedCollectionQuestion(
   if (draft?.step !== EARLY_SLOT_STEP || !reply.includes('?') || /\b(?:change|different|recommend|compare|instead|correct)\b/i.test(userMessage)) return null;
   const name = draft.name || (customerName && !/^(?:Unknown|WhatsApp User)$/i.test(customerName) ? customerName : null);
   const repeatsName = isUsableName(name) && asksForName;
-  const repeatsEdition = draft.service && /\b(?:which|what)\s+(?:package|edition)\b/i.test(reply);
+  const asksEditionChoice =
+    /\b(?:which|what)\s+(?:package|edition)\b/i.test(reply)
+    || /\b(?:bloom|muse|icon|legend|queen|empress|goddess)\b[\s\S]{0,40}\bor\b[\s\S]{0,40}\b(?:bloom|muse|icon|legend|queen|empress|goddess)\b/i.test(reply)
+    || /\b(?:looking to book|would you like to book|prefer a different edition)\b/i.test(reply);
+  const userAlreadyNamedEdition =
+    /\b(?:bloom|muse|icon|legend|queen|empress|goddess)\b/i.test(userMessage)
+    && /\b(?:already|said|chose|chosen|choosen|picked|selected|muse|bloom|icon|legend|queen|empress|goddess)\b/i.test(userMessage);
+  const repeatsEdition = asksEditionChoice && (Boolean(draft.service) || userAlreadyNamedEdition);
   if (!repeatsName && !repeatsEdition) return null;
-  if (!draft.service) return 'Which edition would you like to consider?';
-  if (!draft.date) return 'What date would suit you?';
-  if (!draft.time) return 'What time would suit you?';
+  if (!draft.service && !userAlreadyNamedEdition) return 'Which edition would you like to consider?';
+  if (!draft.date && !/\b(?:today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}(?:st|nd|rd|th)?)\b/i.test(userMessage)) {
+    return 'What date would suit you?';
+  }
+  if (!draft.time && !/\b\d{1,2}(?:[:.\s]\d{2})?\s*(?:am|pm)\b/i.test(userMessage)) {
+    return 'What time would suit you?';
+  }
   return 'Your session details are noted. Would you like to go ahead?';
 }
 
