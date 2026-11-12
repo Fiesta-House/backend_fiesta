@@ -18,14 +18,23 @@ const EDITION_WORDS = 'bloom|muse|icon|legend|queen|empress|goddess';
 const SELECTION_VERB = /\b(?:give\s+me|i\s+want|i\s+would\s+(?:like|want)|i['’]?d\s+like|i\s+(?:choose|pick|select)|i(?:['’]ll|\s+will)\s+(?:take|have|go\s+with|choose|pick)|let['’]?s\s+(?:go\s+with|do|book)|go\s+with|take|choose|pick|select|book|interested\s+in)\b/i;
 const BARE_EDITION = new RegExp(`^(?:(?:ok(?:ay)?|so|then|yes|please)[, ]+)?(?:the\\s+)?(?:${EDITION_WORDS})(?:\\s+(?:package|edition))?(?:[, ]+(?:please|pls|then))?[.! ]*$`, 'i');
 
+/** True when she is reminding us of an edition she already picked ("I already said the Muse… remember?"). */
+export function isEditionRestatement(message: string): boolean {
+  return /\b(?:already\s+(?:said|told|chose|chosen|choosen|picked|selected|booked)|i\s+(?:said|told|chose|chosen|picked|selected)|(?:you\s+)?remember)\b/i.test(
+    message
+  );
+}
+
 /** Returns the edition when the message chooses exactly one edition; questions, detail requests and negations return null. */
 export function selectedEdition(message: string): string | null {
   const text = message.trim();
   const named = PACKAGE_NAMES_FOR_EXTRACTION.filter((name) => new RegExp(`\\b${name.replace(/^THE /, '')}\\b`, 'i').test(text));
   if (named.length !== 1) return null;
-  if (/\?|^\s*(?:what|which|how|why|can|could|do|does|is|are)\b/i.test(text)) return null;
+  const restatement = isEditionRestatement(text);
+  // Restatements often end with "?" ("…remember?") but still name the chosen edition.
+  if (!restatement && /\?|^\s*(?:what|which|how|why|can|could|do|does|is|are)\b/i.test(text)) return null;
   if (/\b(?:include[sd]?|inclusions?|details?|tell\s+me\s+about|compare|difference|vs|versus|recommend|price|cost|how\s+much|not|don['’]?t|dont|never|instead)\b/i.test(text)) return null;
-  return SELECTION_VERB.test(text) || BARE_EDITION.test(text) ? named[0] : null;
+  return restatement || SELECTION_VERB.test(text) || BARE_EDITION.test(text) ? named[0] : null;
 }
 
 export function isPlainGreeting(message: string): boolean {

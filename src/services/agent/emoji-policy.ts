@@ -91,6 +91,8 @@ export const EMOJI_WHITELIST: readonly string[] = [
     '\u{1F44D}', // \u{1F44D}
     '\u{1F64C}', // \u{1F64C}
     '\u{1F602}', // \u{1F602}
+    '\u{1F605}', // \u{1F605}
+    '\u{1F648}', // \u{1F648}
 
     // Celebration / excitement
     '\u{2728}',  // \u{2728}

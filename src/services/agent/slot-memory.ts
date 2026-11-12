@@ -2,7 +2,7 @@ import prisma from '../../config/prisma';
 import { BOOKING_SLOT_RETENTION_MS, PACKAGE_NAMES_FOR_EXTRACTION, SERVICE_DURATIONS } from '../../config/constants';
 import { resolveCalendarDate, INVALID_DATE_REPLY } from './extraction';
 import { bookingDateFacts, formatCustomerDate, nowInBusinessTimezone } from '../../utils/time';
-import { selectedEdition } from './conversation-flow.matcher';
+import { isEditionRestatement, selectedEdition } from './conversation-flow.matcher';
 import { stripAssistantEmojis } from './emoji-policy';
 
 export function closedDateReply(facts: { date: string; isMonday: boolean; isPast: boolean }): string {
@@ -317,6 +317,7 @@ function scanStatedSlots(
   const question =
     /\?|^\s*(?:what|which|how|can|could|do|does|is|are)\b/i.test(message);
 
+  const restatement = isEditionRestatement(message);
   const choice =
     /\b(?:interested in|i want|i would want|i choose|i would like|i'll take|please book|actually|let'?s (?:do|go with))\b/i.test(
       message
@@ -324,7 +325,8 @@ function scanStatedSlots(
     /^(?:the\s+)?(?:bloom|muse|icon|legend|queen|empress|goddess)(?:\s+package)?[.! ]*$/i.test(
       message
     ) ||
-    Boolean(selectedEdition(message));
+    Boolean(selectedEdition(message)) ||
+    restatement;
 
   const asksForName =
     /\b(?:what(?:'s| is)\s+your\s+(?:full\s+)?name|(?:share|provide|tell me|give me|have)\s+your\s+(?:full\s+)?name|what name\s+should\s+I\s+use)\b/i.test(
@@ -357,12 +359,15 @@ function scanStatedSlots(
     delete slots.name;
   }
 
-  if (!question && choice) {
-    const selected = PACKAGE_NAMES_FOR_EXTRACTION.find((name) => {
-      const word = name.replace(/^THE /, '');
+  // Restatements ("I already said the Muse… remember?") still count even with "?".
+  if ((!question && choice) || restatement) {
+    const selected =
+      selectedEdition(message) ||
+      PACKAGE_NAMES_FOR_EXTRACTION.find((name) => {
+        const word = name.replace(/^THE /, '');
 
-      return new RegExp(`\\b${word}\\b`, 'i').test(message);
-    });
+        return new RegExp(`\\b${word}\\b`, 'i').test(message);
+      });
 
     if (selected) {
       slots.service = selected;
@@ -464,6 +469,32 @@ function scanStatedSlots(
       }
     }
   }
+
+  // If she gives a date/time or short affirmation while the assistant already named
+  // exactly one edition ("…your Muse session with the Power Suit"), persist that edition.
+  // Walk newest→oldest so a later Muse booking line wins over an earlier multi-edition list.
+  if (!slots.service) {
+    const affirming =
+      /\b(?:yes+|yep|yup|okay|ok|sure|that\s+one|want\s+that|i\s+want\s+that|sounds?\s+good|perfect|go\s+ahead|confirm|proceed|already\s+(?:cho(?:se|sen|osen)|picked|selected|said)|i\s+had\s+already)\b/i.test(
+        message
+      ) || restatement;
+    if (slots.date || slots.time || affirming) {
+      const recentAssistants = history
+        .filter((entry) => entry.role === 'assistant')
+        .slice(-8)
+        .reverse();
+      for (const entry of recentAssistants) {
+        const namedInAssistant = PACKAGE_NAMES_FOR_EXTRACTION.filter((name) =>
+          new RegExp(`\\b${name.replace(/^THE /, '')}\\b`, 'i').test(entry.content)
+        );
+        if (namedInAssistant.length === 1) {
+          slots.service = namedInAssistant[0];
+          break;
+        }
+      }
+    }
+  }
+
   return { slots, invalidDate };
 }
 

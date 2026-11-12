@@ -1,4 +1,4 @@
-
+﻿
 import OpenAI from 'openai';
 import { CHAT_MODEL, createChatCompletion, type ChatProvider } from './llm/provider';
 export { createChatCompletion, getGroqCooldownUntil,getGroqRateLimitSnapshots } from './llm/provider';
@@ -213,7 +213,7 @@ export class AgentService {
   private static readonly ASSISTANT_INTRO = "I'm the virtual assistant for Fiesta House Maternity.";
 
   private isAskingIfHuman(message: string): boolean {
-    const text = message.toLowerCase().replace(/[’`]/g, "'");
+    const text = message.toLowerCase().replace(/[â€™`]/g, "'");
     return /\b(?:are|r)\s+(?:you|u)\s+(?:a\s+|an\s+)?(?:real\s+|actual\s+|live\s+)?(?:human|person|bot|robot|ai|machine|chatbot|computer)\b/.test(text)
       || /\b(?:am i|is this)\s+(?:talking\s+(?:to|with)\s+|speaking\s+(?:to|with)\s+|chatting\s+(?:to|with)\s+)?(?:a\s+|an\s+)?(?:real\s+|actual\s+)?(?:human|person|bot|robot|ai|chatbot)\b/.test(text)
       || /\bwho\s+am\s+i\s+(?:talking|speaking|chatting)\s+(?:to|with)\b/.test(text)
@@ -227,7 +227,11 @@ export class AgentService {
   private openingGreeting(message: string): string | null {
     const text = message.toLowerCase();
     const timed = text.match(/\bgood\s+(morning|afternoon|evening)\b/);
-    if (timed) return `Good ${timed[1]}`;
+    if (timed) {
+      const hour = nowInBusinessTimezone().hour();
+      const currentPeriod = hour >= 5 && hour < 12 ? 'morning' : hour >= 12 && hour < 17 ? 'afternoon' : 'evening';
+      return `Good ${currentPeriod}`;
+    }
     if (/^\s*(?:habari|hujambo|mambo|niaje|sasa)\b/.test(text)) return 'Habari';
     if (/^\s*(?:hi+|hello+|hey+|hallo)\b/.test(text)) return 'Hello';
     return null;
@@ -670,10 +674,10 @@ private isAddonAdviceRequest(
 private getAddonAdviceReply(): string {
   return [
     'A few lovely options to consider are:',
-    '• Extra outfit — KSh 4,000 if you’d like another look.',
-    '• Extra edited photos — KSh 1,000 each for more finished images.',
-    '• Power Suit — KSh 10,000 if it isn’t already included in your edition, for a bold, structured look.',
-    '• Styled wig hire — KSh 4,000; this needs to be booked in advance.',
+    'â€¢ Extra outfit â€” KSh 4,000 if youâ€™d like another look.',
+    'â€¢ Extra edited photos â€” KSh 1,000 each for more finished images.',
+    'â€¢ Power Suit â€” KSh 10,000 if it isnâ€™t already included in your edition, for a bold, structured look.',
+    'â€¢ Styled wig hire â€” KSh 4,000; this needs to be booked in advance.',
     `You can see the full list here: ${OFFICIAL_WEBSITE_URLS.packages}`,
   ].join('\n');
 }
@@ -810,13 +814,13 @@ private getAddonAdviceReply(): string {
     const draft = await bookingDraftService.get(customerId);
     const recipient = draft?.recipientName || request?.recipient;
     if (!request?.service || !request.date || !request.time || !recipient) {
-      return 'You’re right, I mixed up the sessions. Your existing appointment will remain unchanged, and I will not treat the separate booking as confirmed. Please confirm the recipient, package, date, and time for the new session.';
+      return 'Youâ€™re right, I mixed up the sessions. Your existing appointment will remain unchanged, and I will not treat the separate booking as confirmed. Please confirm the recipient, package, date, and time for the new session.';
     }
 
     const duration = SERVICE_DURATIONS[request.service.toLowerCase()];
     const slotsResult = await bookingService.getAvailableSlots(request.date, duration || DEFAULT_DURATION);
     if (!isAvailableSlotList(slotsResult) && slotsResult.status === 'closed') {
-      return `You’re right, I mixed up the sessions. Your existing appointment is unchanged. The separate ${request.service} request for ${recipient} is not booked; the studio is closed on ${inBusinessTimezone(request.date).format('dddd, D MMMM')}. Please choose another date.`;
+      return `Youâ€™re right, I mixed up the sessions. Your existing appointment is unchanged. The separate ${request.service} request for ${recipient} is not booked; the studio is closed on ${inBusinessTimezone(request.date).format('dddd, D MMMM')}. Please choose another date.`;
     }
 
     const availableSlots: string[] = Array.isArray(slotsResult) ? slotsResult : [];
@@ -824,10 +828,10 @@ private getAddonAdviceReply(): string {
       const alternatives = availableSlots.slice(0, 4)
         .map((time) => dayjs(`2000-01-01T${time}`).format('h:mm A'))
         .join(', ');
-      return `You’re right, I mixed up the sessions. Your existing appointment is unchanged. The separate ${request.service} session for ${recipient} on ${inBusinessTimezone(request.date).format('dddd, D MMMM')} at ${dayjs(`2000-01-01T${request.time}`).format('h:mm A')} is not available, so I have not created another booking. Available times are ${alternatives || 'none'}. Which would work?`;
+      return `Youâ€™re right, I mixed up the sessions. Your existing appointment is unchanged. The separate ${request.service} session for ${recipient} on ${inBusinessTimezone(request.date).format('dddd, D MMMM')} at ${dayjs(`2000-01-01T${request.time}`).format('h:mm A')} is not available, so I have not created another booking. Available times are ${alternatives || 'none'}. Which would work?`;
     }
 
-    return `You’re right, I mixed up the sessions. Your existing appointment is unchanged. I understand this is a separate ${request.service} booking for ${recipient}. ${inBusinessTimezone(request.date).format('dddd, D MMMM')} at ${dayjs(`2000-01-01T${request.time}`).format('h:mm A')} is available, but it is not booked yet. What is ${recipient}’s full name so I can prepare the booking correctly?`;
+    return `Youâ€™re right, I mixed up the sessions. Your existing appointment is unchanged. I understand this is a separate ${request.service} booking for ${recipient}. ${inBusinessTimezone(request.date).format('dddd, D MMMM')} at ${dayjs(`2000-01-01T${request.time}`).format('h:mm A')} is available, but it is not booked yet. What is ${recipient}â€™s full name so I can prepare the booking correctly?`;
   }
 
   private async getPastAppointmentsListReply(customerId: string): Promise<string> {
@@ -948,7 +952,24 @@ private getAddonAdviceReply(): string {
     const recentlyAskedForTime = history.slice(-2).some((message) =>
       message.role === 'assistant' && /\b(?:what time|which time|preferred time|time would work)\b/i.test(message.content)
     );
-    return givesExplicitTime && recentlyAskedForTime;
+    if (givesExplicitTime && recentlyAskedForTime) return true;
+
+    // Expose tools when the customer is affirming/confirming a booking proposal or edition selection
+    // that the assistant asked about at any recent point in the conversation. Without this, the LLM
+    // tries to call propose_booking but finds no tools in the schema -> empty text response -> fallback.
+    // NOTE: search the full loaded history (not just slice(-3)) because error-recovery bot messages
+    // ('Sorry, I lost the thread') can push the original booking question far back in history.
+    // Also allow non-space separators like '..I' (Noo..I want that one) in the affirmation pattern.
+    const isAffirmation = /\b(?:that\s+one|yes+|yep|yup|okay|ok|sure|go\s+ahead|confirm|proceed|want\s+that|that['']?s?\s+(?:it|the\s+one)|noo+[.\s]+i\s+want|i\s+want\s+that|that['']?s?\s+fine|perfect|sounds?\s+good|let['']?s?\s+do\s+it|already\s+(?:cho(?:se|sen|osen)|picked|selected|said|told)|i\s+had\s+already|you\s+remember|remember\??)\b/i.test(text);
+    const lastAssistantAskedBookingConfirmation = history
+      .some(
+        (m) =>
+          m.role === 'assistant' &&
+          /\b(?:book(?:ing)?|edition|package|confirm|which.*(?:edition|package)|looking\s+to\s+book|would\s+you\s+(?:like|prefer|want)\s+to\s+book|shall\s+i\s+(?:go\s+ahead|book|confirm))\b/i.test(m.content)
+      );
+    if (isAffirmation && lastAssistantAskedBookingConfirmation) return true;
+
+    return false;
   }
 
   private customerReference(customerId: string): string {
@@ -1127,10 +1148,10 @@ if (
     const professionalAdviceRequest = /\b(?:legal|financial|investment|tax)\s+advice\b|\bshould\s+i\s+(?:invest|take\s+out\s+a\s+loan)\b|\b(?:lawsuit|lawyer|attorney)\b/.test(text);
     const explicitSexualRequest = /\b(talk\s+dirty|dirty\s+talk|sexual\s+roleplay)\b/.test(text);
 
-    if (explicitSexualRequest) return 'I’ll keep things professional here, but I can definitely help you plan your Fiesta House shoot.';
+    if (explicitSexualRequest) return 'Iâ€™ll keep things professional here, but I can definitely help you plan your Fiesta House shoot.';
     if (!medicalOrExplicitQuestion && !professionalAdviceRequest) return null;
 
-    return 'That’s outside my studio brief; a qualified professional is the right person to ask. I’m here if you need help with a shoot or booking.';
+    return 'Thatâ€™s outside my studio brief; a qualified professional is the right person to ask. Iâ€™m here if you need help with a shoot or booking.';
   }
 
   private isClearlyUnrelatedRequest(userMessage: string): boolean {
@@ -1185,7 +1206,7 @@ if (
 
   if (!this.isClearlyUnrelatedRequest(userMessage)) return null;
 
-  return 'I’m your Fiesta House studio assistant, so I stick to shoots and bookings. If you need help with a session, I’m happy to help.';
+  return 'Iâ€™m your Fiesta House studio assistant, so I stick to shoots and bookings. If you need help with a session, Iâ€™m happy to help.';
 }
   private shouldClarifyBookingForSomeoneElse(userMessage: string): boolean {
     return isBookingForSomeoneElseRequest(userMessage);
@@ -1614,8 +1635,19 @@ if (
     return buildMultiPersonBookingReply();
   }
 
-  private getBookingForSomeoneElseReply(): string {
-    return buildBookingForSomeoneElseReply();
+  private getBookingForSomeoneElseReply(userMessage = ''): string {
+    const lower = userMessage.toLowerCase();
+    const relation =
+      lower.includes('wife') ? 'your wife' :
+      lower.includes('sister') ? 'your sister' :
+      lower.includes('husband') ? 'your husband' :
+      lower.includes('brother') ? 'your brother' :
+      lower.includes('friend') ? 'your friend' :
+      lower.includes('partner') ? 'your partner' :
+      lower.includes('daughter') ? 'your daughter' :
+      lower.includes('mother') ? 'your mother' :
+      'her';
+    return buildBookingForSomeoneElseReply(relation);
   }
 
   private async captureMultiPersonBookingNote(customerId: string, userMessage: string): Promise<void> {
@@ -1739,7 +1771,14 @@ private getSystemPrompt(
   packagePricingLine = PACKAGE_PRICING_FALLBACK,
   conversation = ''
 ): string {
-  const now = nowInBusinessTimezone().format('dddd, MMMM D, YYYY h:mm A');
+  const nowMoment = nowInBusinessTimezone();
+  const currentHour = nowMoment.hour();
+  const timePeriod = currentHour >= 5 && currentHour < 12
+    ? 'Morning'
+    : currentHour >= 12 && currentHour < 17
+      ? 'Afternoon'
+      : 'Evening';
+  const now = `${nowMoment.format('dddd, MMMM D, YYYY h:mm A')} (${timePeriod})`;
 
   const packagePricing = includePackagePricing
     ? packagePricingLine
@@ -1750,6 +1789,7 @@ private getSystemPrompt(
     : 'Use exact add-on prices only when present in Business Context; if unavailable, offer to confirm with the team rather than guess.';
 
   return `Current Date/Time: ${now}
+Studio Local Period: ${timePeriod}
 
 You are the virtual assistant for Fiesta House Maternity, a luxury maternity, newborn and family photography studio in Parklands, Nairobi. You are warm, gracious and polished, like a caring concierge at a luxury studio: attentive and calm, never gushing, never curt. You help customers with Fiesta House services, sessions, bookings and studio policies.
 
@@ -1835,13 +1875,23 @@ C5. MISSED CALLS: if she says she called the studio and nobody answered, respond
 [D] CONVERSATION STYLE
 
 D0. WARMTH AND INTENT: behave like a smart, attentive host, not a script. Work out what she means, including typos, Swahili, Sheng and half-finished thoughts, and answer that first, with the smallest reply that serves her intent.
-- Greeting: return it warmly. No services, links or booking question.
+- Greeting: return it warmly aligned with the actual current Nairobi time period (${timePeriod}: morning 5amâ€“12pm, afternoon 12pmâ€“5pm, evening 5pm onwards). If the customer greets with the wrong time of day (e.g. says "good morning" when it is ${timePeriod.toLowerCase()}), DO NOT blindly echo their mistake. Greet with the actual time of day ("Good ${timePeriod.toLowerCase()}!") or a warm "Hello!" / "Habari!". No services, links or booking questions in greetings.
+- Banter, teasing, or slip-up corrections (e.g. she says "it's not morning though" or makes a light teasing remark): React like a charming, self-aware human host with good humor and warmthâ€”laugh it off pleasantly (e.g. "Haha oops, you're right! Time is flying today ðŸ˜… Good evening Maryanne!" or "Oh haha, my bad! Time really got away from me ðŸ™ˆ Good evening! How can I help you today?"). NEVER respond like a cold, scripted corporate bot.
 - Thanks or acknowledgement: respond briefly and warmly; do not reopen a finished topic.
 - Casual remark: answer naturally without forcing a link to photography, pregnancy or booking.
 - Feelings or personal context (body size, nerves, due date, excitement): acknowledge with one sincere, specific sentence before any information; do not assume she wants advice or a booking.
 - Studio question: answer it directly from verified information.
 - Booking or a change to one: follow [A] and [B] exactly.
 Use her first name naturally when known, without forcing it into every reply. Mirror the language she writes in. Vary your wording so you never sound like a template. Warm and gracious, never gushing, never curt. Interest ("that seems interesting", "I like it") is not a booking request: respond to it warmly and let her lead, offering to help her choose or answer questions rather than asking for a date. If a request is ambiguous (for example "suggest for me"), ask one short question about what she would like suggested instead of assuming a booking. Never open a reply with her name alone. In sentences write edition names as "the Muse" or "the Bloom", not in capitals.
+
+D0b. NO ROBOTIC CORPORATE CLICHÃ‰S:
+Write like a real human concierge chatting on WhatsApp, not an automated support desk or an IVR tree. Specifically:
+- NEVER say "Thanks for letting me know" or "I seeâ€”thanks for letting me know".
+- NEVER say "How can I assist you today?" or "How may I assist you?". Use natural conversational phrases like "How can I help you today?" or "What can I do for you?".
+- NEVER use formal customer service jargon like "Please be advised", "Kindly note", or "I apologize for any inconvenience".
+- When caught in a human slip or misunderstanding, own it with a brief, friendly, relatable chuckle ("Haha oops!", "My mistake!", "You're totally right ðŸ˜…"), not sterile robotic acknowledgments.
+
+D0c. DO NOT RE-ASK ESTABLISHED EDITION OR PACKAGE: if the conversation already established which edition/package she wants (and any add-ons she chose), do not ask again which package or whether she is "looking to book" that edition. Treat short affirmations like "that one", "I want that", "Noo..I want that one", "yes" or "okay" as confirmation of the established choice, then move to the next missing step (name, date, time, or propose/confirm the booking). Only re-ask if she clearly changes her mind or the choice is genuinely ambiguous.
 
 D1. ABOUT YOU: if she asks who you are or what you do, say you are Fiesta House Maternity's virtual assistant and briefly what you can help with (sessions and editions, add-ons, availability, bookings). If she may mean the studio, introduce it too. Adapt to her wording and give no technical detail about AI or software unless asked.
 
@@ -1933,7 +1983,7 @@ D9. SENSITIVE DISCLOSURES: when she shares body size, health, pregnancy worries 
     const draftBeforeThisTurn = await prisma.bookingDraft.findUnique({ where: { customerId } });
     const initialDraftStep = draftBeforeThisTurn?.step;
     const currentSlots = draftBeforeThisTurn && !earlySlotsExpired(draftBeforeThisTurn) ? draftBeforeThisTurn : null;
-    const statedSlots = extractStatedSlots(userMessage);
+    const statedSlots = extractStatedSlots(userMessage, history);
     const knownService = statedSlots.service || currentSlots?.service;
     const requestedCalendarDate = resolveCalendarDate(userMessage);
     const nextWeekAvailability = /\bnext\s+week\b/i.test(userMessage)
@@ -2297,7 +2347,19 @@ ${contextString}`;
           'propose_reschedule',
         ];
       } else {
-        selectedToolNamesForTurn = ['get_available_slots'];
+        // Keep propose_booking available when package + date + time are already
+        // known so the model can lock the slot instead of re-asking Muse vs Bloom.
+        const knownDate =
+          statedSlots.date ||
+          currentSlots?.date ||
+          hasExplicitDateForToolSelection;
+        const knownTime =
+          statedSlots.time ||
+          currentSlots?.time ||
+          hasExplicitTimeForToolSelection;
+        selectedToolNamesForTurn = knownService && knownDate && knownTime
+          ? ['get_available_slots', 'propose_booking']
+          : ['get_available_slots'];
       }
     }
 
@@ -2621,7 +2683,7 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
       ? unverifiedActionReply
       : this.isUnverifiedBookingConfirmation(modelContent, userMessage, history, upcomingBooking)
       && !rescheduleAppliedThisTurn
-      ? 'I can’t confirm a new booking from that message alone. No new appointment has been confirmed or paid for. I can check whether the requested date and time are available.'
+      ? 'I canâ€™t confirm a new booking from that message alone. No new appointment has been confirmed or paid for. I can check whether the requested date and time are available.'
       : null) || repeatedQuestionReply;
     let safeModelContent = codeOwnedReply || this.formatCustomerReply(modelContent, userMessage, history);
     let verifierBlocked = false;
@@ -3211,7 +3273,7 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
     const includesThanks = /\b(thanks|thank you|appreciate|appreciated)\b/.test(normalized);
     if (awaitingConfirmation && !includesThanks && /^(?:ok|okay|alright|sawa)$/.test(normalized)) return false;
     const lastAssistantText = [...history].reverse().find((message) => message.role === 'assistant')?.content || '';
-    if (/\bpayment link\b|\bi['’]ll send you\b|\breserved the\b|\bi['’]ve reserved\b/i.test(lastAssistantText)) return false;
+    if (/\bpayment link\b|\bi['â€™]ll send you\b|\breserved the\b|\bi['â€™]ve reserved\b/i.test(lastAssistantText)) return false;
 
     return true;
   }
@@ -3221,7 +3283,7 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
     const normalized = userMessage.trim().toLowerCase().replace(/[!?.,]/g, ' ').replace(/\s+/g, ' ');
     if (/\b(no|not|don't|dont|cancel|wait|hold)\b/.test(normalized)) return false;
     return /\b(?:yes+|yeah|yep|ndio|confirm(?:ed)?|go[\s-]?ahead|proceed)\b/.test(normalized)
-      || /^(?:let['’]?s|let us) do it(?: then)?$/.test(normalized.trim());
+      || /^(?:let['â€™]?s|let us) do it(?: then)?$/.test(normalized.trim());
   }
 
   private isCancellationConfirmation(userMessage: string): boolean {

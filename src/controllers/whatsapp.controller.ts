@@ -6,6 +6,7 @@ import * as messageDebouncer from '../services/messaging/debounce.service';
 import prisma from '../config/prisma';
 import { retryOnPrismaDisconnect } from '../utils/prisma-retry';
 import { visionService } from '../services/vision/vision.service';
+import { MAX_HISTORY_MESSAGES } from '../services/agent/constants';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -236,7 +237,7 @@ export class WhatsAppController {
       const recentMessages = await retryOnPrismaDisconnect(prisma, () => prisma.message.findMany({
         where: { customerId, createdAt: { lt: pendingInbound[0].createdAt } },
         orderBy: { createdAt: 'desc' },
-        take: 6
+        take: MAX_HISTORY_MESSAGES
       }));
       const history = recentMessages.reverse().map(m => ({
         role: (m.direction === 'inbound' ? 'user' : 'assistant') as 'user' | 'assistant',

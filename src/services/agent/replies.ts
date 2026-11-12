@@ -350,6 +350,6 @@ export function isBookingForSomeoneElseRequest(userMessage: string): boolean {
   return bookingContext && bookingForSomeoneElse && !isMultiPersonBookingRequest(userMessage);
 }
 
-export function buildBookingForSomeoneElseReply(): string {
-  return 'Of course. Is the session just for your sister, or would you both like to be photographed together? Once I know that, I can help with the package, date, and preferred time.';
+export function buildBookingForSomeoneElseReply(relation = 'her'): string {
+  return `Of course. Is the session just for ${relation}, or would you both like to be photographed together? Once I know that, I can help with the package, date, and preferred time.`;
 }

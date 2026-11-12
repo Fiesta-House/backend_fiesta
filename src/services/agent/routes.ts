@@ -117,7 +117,7 @@ export function createMessageRoutes(
   return [
     {
       name: 'familyStyling',
-      replyMode: 'deterministic',
+      replyMode: 'natural',
       when: () => Boolean(familyStylingReply(userMessage, history)),
       handle: () => familyStylingReply(userMessage, history),
     },
@@ -400,32 +400,35 @@ export function createMessageRoutes(
     },
     {
       name: 'bookingForSomeoneElseFollowUp',
+      replyMode: 'natural',
       when: () => {
         const lastAssistantMessage = [...history].reverse()
           .find((entry) => entry.role === 'assistant')?.content || '';
 
         const clarificationWasAsked =
-          /session just for your sister[\s\S]{0,100}would you both like to be photographed together/i
+          /session just for (?:your\s+)?(?:sister|wife|husband|friend|brother|partner)[\s\S]{0,100}would you both like to be photographed together/i
             .test(lastAssistantMessage);
 
         const answer = userMessage.trim();
 
         const answersForSister =
-          /^(?:(?:it's|it is|the session is)\s+)?(?:just|only)\s+(?:for\s+)?(?:her|my sister)(?:\s+only)?[.! ]*$/i
+          /^(?:(?:it's|it is|the session is)\s+)?(?:just|only)\s+(?:for\s+)?(?:her|him|my sister|my wife|my husband)(?:\s+only)?[.! ]*$/i
             .test(answer);
 
         return clarificationWasAsked && answersForSister;
       },
       handle: () =>
-        "Got it. The session will be just for your sister. What is her full name?",
+        "Got it. What is her full name for the booking?",
     },
     {
       name: 'bookingForSomeoneElse',
+      replyMode: 'natural',
       when: () => this.shouldClarifyBookingForSomeoneElse(userMessage),
-      handle: () => this.getBookingForSomeoneElseReply(),
+      handle: () => this.getBookingForSomeoneElseReply(userMessage),
     },
     {
       name: 'multiPersonBooking',
+      replyMode: 'natural',
       when: () => this.shouldUseMultiPersonBookingReply(userMessage),
       handle: async () => {
         await this.captureMultiPersonBookingNote(customerId, userMessage).catch((err: unknown) => {
@@ -436,19 +439,19 @@ export function createMessageRoutes(
     },
     {
       name: 'lashes',
-      replyMode: 'deterministic',
+      replyMode: 'natural',
       when: () => isStandaloneLashesQuestion(userMessage),
       handle: () => this.getLashesReply(),
     },
     {
       name: 'legacyPackageName',
-      replyMode: 'deterministic',
+      replyMode: 'natural',
       when: () => Boolean(legacyPackageReply(userMessage)),
       handle: () => this.getLegacyPackageReply(userMessage),
     },
     {
       name: 'packageBudget',
-      replyMode: 'deterministic',
+      replyMode: 'natural',
       when: () => this.shouldUsePackageBudgetReply(userMessage),
       handle: () => this.getPackageBudgetReply(),
     },
@@ -544,6 +547,7 @@ export function createMessageRoutes(
 
     {
       name: 'clarifyNewAddon',
+      replyMode: 'natural',
       when: () => this.shouldClarifyNewAddon(userMessage, history),
       handle: () => 'Which add-on would you like to add to your session? I can show you the available extras if you are not sure yet.',
     },
@@ -572,19 +576,19 @@ export function createMessageRoutes(
     },
     {
       name: 'personalOutfit',
-      replyMode: 'deterministic',
+      replyMode: 'natural',
       when: () => isPersonalOutfitQuestion(userMessage),
       handle: () => buildPersonalOutfitReply(),
     },
     {
       name: 'hairWigClarification',
-      replyMode: 'deterministic',
+      replyMode: 'natural',
       when: () => isHairWigClarificationRequest(userMessage),
       handle: () => buildHairWigClarificationReply(),
     },
     {
       name: 'addonInquiry',
-      replyMode: 'deterministic',
+      replyMode: 'natural',
       when: () => Boolean(addonInquiryReply(userMessage)),
       handle: async () => {
         const inquiry = addonInquiryReply(userMessage);
@@ -594,6 +598,7 @@ export function createMessageRoutes(
     },
     {
       name: 'selectedAddon',
+      replyMode: 'natural',
       when: () => Boolean(addonSelectionClarification(userMessage, history) || this.getSelectedAddon(userMessage, history)),
       handle: async () => {
         const clarification = addonSelectionClarification(userMessage, history);
@@ -663,13 +668,13 @@ export function createMessageRoutes(
     },
     {
       name: 'postShootProcess',
-      replyMode: 'deterministic',
+      replyMode: 'natural',
       when: () => this.shouldUsePostShootProcessReply(userMessage) && !this.shouldUseBookingProcessReply(userMessage),
       handle: () => this.getPostShootProcessReply(),
     },
     {
       name: 'bookingProcess',
-      replyMode: 'deterministic',
+      replyMode: 'natural',
       when: () => this.shouldUseBookingProcessReply(userMessage),
       handle: async () => this.getBookingProcessReply(customerId, platform, history),
     },
@@ -716,7 +721,7 @@ export function createMessageRoutes(
     },
     {
   name: 'packageCatalog',
-  replyMode: 'deterministic',
+  replyMode: 'natural',
  when: () => !/\b(?:what happens|what['?]?s next|what next|next steps?|what do i do|how (?:does|do) (?:it|the (?:booking|process)(?: process)?) work|after (?:i|choosing|selecting|booking|paying))\b/i.test(userMessage)
    && (this.conversationFlows.isPackageCatalogRequest(userMessage, history) || catalogLinkFollowUp(userMessage, history)),
   handle: async () => {
