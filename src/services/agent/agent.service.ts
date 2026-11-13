@@ -166,6 +166,7 @@ import {
   getEarliestImageDeliveryReply as buildEarliestImageDeliveryReply,
   isEarliestImageDeliveryRequest as matchesEarliestImageDeliveryRequest,
 } from './photo-delivery-replies';
+import { completeTillBooking } from './till-booking-confirmation';
 
 type ReplyContext = {
   customerId: string;
@@ -2876,11 +2877,39 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
     // and keep deterministic routes from hijacking the conversation while we wait for it.
     const paymentMessageState = await this.captureMpesaMessage(customerId, userMessage, platform);
     const paymentMessageMode = paymentMessageState !== 'not_waiting';
-    if (paymentMessageState === 'received') {
-      ctx.strategyUsed = 'mpesaPaymentMessage';
-      return this.respond(ctx, 'Thank you. I have received your M-Pesa confirmation. The Fiesta House team will verify the payment and confirm your session once it is verified.');
+   if (paymentMessageState === 'received') {
+  ctx.strategyUsed = 'mpesaPaymentMessage';
+
+  try {
+    // Attempt to complete the pending Till booking immediately.
+    const bookingReply = await completeTillBooking(
+      customerId,
+      userMessage
+    );
+
+    if (bookingReply) {
+      return this.respond(ctx, bookingReply);
     }
 
+    // No matching booking could be completed.
+    // This covers receipts without a valid transaction code
+    // and receipts without a matching pending booking.
+    return this.respond(
+      ctx,
+      'Thank you for sharing your M-Pesa confirmation. The studio team has received it and will check the transaction against your booking.'
+    );
+  } catch (error) {
+    console.error(
+      '[AGENT_FLOW] Till booking completion failed:',
+      error
+    );
+
+    return this.respond(
+      ctx,
+      'Thank you. Your M-Pesa confirmation has been received. The studio team is checking the transaction and your booking details.'
+    );
+  }
+}
     if (circuitBreaker.isOpen()) {
       console.log('[AGENT_FLOW] Circuit breaker is open; returning fallback reply.');
       ctx.strategyUsed = 'circuitBreaker';
@@ -3068,42 +3097,51 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
    * for team verification even when an old or unrelated draft is present.
    * A bare transaction code is accepted only while a Till payment is pending.
    */
-  private async captureMpesaMessage(
-    customerId: string,
-    userMessage: string,
-    platform: string
-  ): Promise<'not_waiting' | 'waiting' | 'received'> {
-    if (platform !== 'whatsapp' && platform !== 'web') return 'not_waiting';
+ private async captureMpesaMessage(
+  customerId: string,
+  userMessage: string,
+  platform: string
+): Promise<'not_waiting' | 'waiting' | 'received'> {
+  if (platform !== 'whatsapp' && platform !== 'web') return 'not_waiting';
 
-    try {
-      const draft = await prisma.bookingDraft.findUnique({ where: { customerId } });
-      const awaitingPaymentMessage = draft?.step === 'awaiting_payment_message';
-      const parsed = parseMpesaMessage(userMessage);
+  try {
+    const draft = await prisma.bookingDraft.findUnique({
+      where: { customerId },
+    });
 
-      const hasPaymentDetails =
-        /\\b(?:Ksh|KES)\\b/i.test(userMessage) ||
-        /\\b(?:paid to|sent to|confirmed|received)\\b/i.test(userMessage);
+    const awaitingPaymentMessage =
+      draft?.step === 'awaiting_payment_message';
 
-      const looksLikeMpesaReceipt =
-        Boolean(parsed.code) ||
-        (/\\bM[\\s-]?PESA\\b/i.test(userMessage) && hasPaymentDetails) ||
-        (hasPaymentDetails && /\\b(?:transaction|receipt)\\b/i.test(userMessage));
+    const parsed = parseMpesaMessage(userMessage);
 
-      // A full SMS needs an amount, confirmation wording and payment context.
-      // This also recognises messages phrased as "received from Fiesta House..."
-      const isCompleteReceiptSms =
-        /\\b(?:Ksh|KES)\\b/i.test(userMessage) &&
-        /\\b(?:confirmed|received|successful|paid|sent)\\b/i.test(userMessage) &&
-        /\\b(?:M[\\s-]?PESA|till|buy goods|fiesta|transaction|receipt)\\b/i.test(userMessage);
+    const hasPaymentDetails =
+      /\b(?:Ksh|KES)\b/i.test(userMessage) ||
+      /\b(?:paid to|sent to|confirmed|received)\b/i.test(userMessage);
 
-      const shouldCapture =
-        looksLikeMpesaReceipt &&
-        (awaitingPaymentMessage || isCompleteReceiptSms);
+    const looksLikeMpesaReceipt =
+      Boolean(parsed.code) ||
+      (/\bM[ -]?PESA\b/i.test(userMessage) && hasPaymentDetails) ||
+      (hasPaymentDetails && /\b(?:transaction|receipt)\b/i.test(userMessage));
 
-      if (!shouldCapture) {
-        return awaitingPaymentMessage ? 'waiting' : 'not_waiting';
-      }
+    // A full SMS needs an amount, confirmation wording and payment context.
+    // This also recognises messages phrased as "received from Fiesta House..."
+    const isCompleteReceiptSms =
+      /\b(?:Ksh|KES)\b/i.test(userMessage) &&
+      /\b(?:confirmed|received|successful|paid|sent)\b/i.test(userMessage) &&
+      /\b(?:M[ -]?PESA|till|buy goods|fiesta|transaction|receipt)\b/i.test(userMessage);
 
+    const shouldCapture =
+      looksLikeMpesaReceipt &&
+      (awaitingPaymentMessage || isCompleteReceiptSms);
+
+    if (!shouldCapture) {
+      return awaitingPaymentMessage ? 'waiting' : 'not_waiting';
+    }
+
+    // Matched pending bookings with a valid receipt code are handled by
+    // completeTillBooking(), which creates the booking and notifies admin.
+    // Escalate unmatched receipts and messages without a valid receipt code.
+    if (!awaitingPaymentMessage || !parsed.code) {
       await this.escalate(
         customerId,
         'booking',
@@ -3126,13 +3164,18 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
             : 'No matching payment-waiting draft was found. Match this receipt against the M-Pesa statement and any outstanding customer payment manually. Do not associate it with an unrelated or stale draft, and do not confirm payment until verified.',
         })
       );
-
-      return 'received';
-    } catch (error) {
-      console.error('[AGENT_FLOW] Could not process an M-Pesa payment message:', error);
-      return 'waiting';
     }
+
+    return 'received';
+  } catch (error) {
+    console.error(
+      '[AGENT_FLOW] Could not process an M-Pesa payment message:',
+      error
+    );
+
+    return 'waiting';
   }
+}
 
   private async escalateQuotaHandoff(customerId: string, userMessage: string, platform: string): Promise<void> {
     const draft = await prisma.bookingDraft.findUnique({ where: { customerId } });
@@ -3524,73 +3567,142 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
     return Number.isInteger(amount) && amount > 0 ? amount : null;
   }
 
-  private async tryImmediateConfirmation(
-    customerId: string,
-    userMessage = '',
-    history: { role: 'user' | 'assistant'; content: string }[] = []
-  ): Promise<string | null> {
-    const draft = await prisma.bookingDraft.findUnique({ where: { customerId } });
-    if (!draft?.step) return null;
+ 
+ async tryImmediateConfirmation(
+  customerId: string,
+  userMessage = '',
+  history: { role: 'user' | 'assistant'; content: string }[] = []
+): Promise<string | null> {
+  const draft = await prisma.bookingDraft.findUnique({ where: { customerId } });
+  if (!draft?.step) return null;
 
-    if (['reschedule_confirm', 'cancel_confirm'].includes(draft.step) && !this.previousMessageRequestsConfirmation(history)) return null;
+  if (
+    ['reschedule_confirm', 'cancel_confirm'].includes(draft.step) &&
+    !this.previousMessageRequestsConfirmation(history)
+  ) {
+    return null;
+  }
 
-    if (draft.step === 'payment_pending') {
-      const consent = !userMessage || this.isPaymentConfirmation(userMessage);
-      return this.getPaymentRecoveryReply(customerId, userMessage, consent ? 'consent' : 'status_check');
+  if (draft.step === 'payment_pending') {
+    const consent = !userMessage || this.isPaymentConfirmation(userMessage);
+    return this.getPaymentRecoveryReply(
+      customerId,
+      userMessage,
+      consent ? 'consent' : 'status_check'
+    );
+  }
+
+  // The customer has already accepted the proposal.
+  // Repeat the payment instructions without attempting confirmation again.
+  if (draft.step === 'awaiting_payment_message') {
+    const pkg = await this.getPackageForDeposit(draft.service || undefined);
+    const deposit = this.getDepositForPackage(pkg);
+
+    return `To complete your booking for ${draft.service} on ${draft.date} at ${draft.time}, please pay the deposit of Ksh ${deposit.toLocaleString()} via Lipa na M-Pesa: Buy Goods Till Number ${TILL_NUMBER} (${TILL_NAME}). Once paid, please paste or forward the M-Pesa confirmation message or transaction code here. The team will verify your payment and confirm your session.`;
+  }
+
+  if (draft.step === 'awaiting_confirmation') {
+    if (!this.isPaymentConfirmation(userMessage)) {
+      return PAYMENT_CONFIRMATION_REQUIRED_REPLY;
     }
 
-    if (draft.step === 'awaiting_confirmation') {
-      if (!this.isPaymentConfirmation(userMessage)) {
-        return PAYMENT_CONFIRMATION_REQUIRED_REPLY;
+    const expectedDeposit = this.getDepositAmountFromProposalHistory(history);
+
+    if (
+      expectedDeposit === null ||
+      !this.previousMessageRequestsConfirmation(history)
+    ) {
+      return this.getBookingStatusReply(customerId);
+    }
+
+    try {
+      const result = await this.executeConfirmBookingTool(
+        customerId,
+        'awaiting_confirmation',
+        expectedDeposit
+      );
+
+      // Confirmation of the proposal is recorded, but payment is still outstanding.
+      return `To complete your booking for ${result.service} on ${result.date} at ${result.time}, please pay the deposit of Ksh ${result.depositAmount.toLocaleString()} via Lipa na M-Pesa: Buy Goods Till Number ${result.till} (${result.tillName}). Once paid, please paste or forward the M-Pesa confirmation message or transaction code here. The team will verify your payment and confirm your session.`;
+    } catch (error: any) {
+      if (error?.code !== PAYMENT_ALREADY_PENDING) {
+        throw error;
       }
-      const expectedDeposit = this.getDepositAmountFromProposalHistory(history);
-      if (expectedDeposit === null || !this.previousMessageRequestsConfirmation(history)) {
-        return this.getBookingStatusReply(customerId);
+
+      // Another request may already have moved the draft forward.
+      // Re-read the state and return payment instructions without confirming again.
+      const currentDraft = await prisma.bookingDraft.findUnique({
+        where: { customerId },
+      });
+
+      if (currentDraft?.step === 'awaiting_payment_message') {
+        const pkg = await this.getPackageForDeposit(
+          currentDraft.service || undefined
+        );
+        const deposit = this.getDepositForPackage(pkg);
+
+        return `To complete your booking for ${currentDraft.service} on ${currentDraft.date} at ${currentDraft.time}, please pay the deposit of Ksh ${deposit.toLocaleString()} via Lipa na M-Pesa: Buy Goods Till Number ${TILL_NUMBER} (${TILL_NAME}). Once paid, please paste or forward the M-Pesa confirmation message or transaction code here. The team will verify your payment and confirm your session.`;
       }
-      try {
-        await this.executeConfirmBookingTool(customerId, 'awaiting_confirmation', expectedDeposit);
-      } catch (error: any) {
-        if (error?.code !== PAYMENT_ALREADY_PENDING) throw error;
-      }
-      // Till flow: her confirmation is recorded and the draft now waits for her M-Pesa message.
-      // Returning null lets the model tell her, in its own words, how to pay (see the payment summary in runAgent).
+
+      throw error;
+    }
+  }
+
+  if (
+    draft.step === 'reschedule_confirm' &&
+    this.previousMessageRequestsConfirmation(history)
+  ) {
+    const result = await this.executeConfirmRescheduleTool(
+      customerId,
+      'reschedule_confirm'
+    );
+
+    void this.notifyRescheduleAdmin({
+      customerId,
+      event: 'confirmed',
+      service: result.service,
+      oldDateTime: result.oldDateTime,
+      newDateTime: result.newDateTime,
+    });
+
+    return customerReplyTemplates.rescheduleConfirmed(
+      result.service,
+      dayjs(result.newDateTime).format('dddd, MMMM D, YYYY [at] h:mm A'),
+      result.depositForfeited
+    );
+  }
+
+  if (draft.step === 'cancel_confirm') {
+    if (!this.hasPendingCancellationProposal(history)) {
+      await prisma.bookingDraft.deleteMany({
+        where: { customerId, step: 'cancel_confirm' },
+      });
       return null;
     }
 
-    if (draft.step === 'reschedule_confirm' && this.previousMessageRequestsConfirmation(history)) {
-      const result = await this.executeConfirmRescheduleTool(customerId, 'reschedule_confirm');
-      void this.notifyRescheduleAdmin({
-        customerId,
-        event: 'confirmed',
-        service: result.service,
-        oldDateTime: result.oldDateTime,
-        newDateTime: result.newDateTime,
+    if (this.isCancellationProposalExpired(draft)) {
+      await prisma.bookingDraft.deleteMany({
+        where: { customerId, step: 'cancel_confirm' },
       });
-      return customerReplyTemplates.rescheduleConfirmed(
-        result.service,
-        dayjs(result.newDateTime).format('dddd, MMMM D, YYYY [at] h:mm A'),
-        result.depositForfeited
-      );
+
+      return 'That cancellation proposal expired, so your booking was not changed. If you still want to cancel it, please ask again.';
     }
 
-    if (draft.step === 'cancel_confirm') {
-      if (!this.hasPendingCancellationProposal(history)) {
-        await prisma.bookingDraft.deleteMany({ where: { customerId, step: 'cancel_confirm' } });
-        return null;
-      }
-      if (this.isCancellationProposalExpired(draft)) {
-        await prisma.bookingDraft.deleteMany({ where: { customerId, step: 'cancel_confirm' } });
-        return 'That cancellation proposal expired, so your booking was not changed. If you still want to cancel it, please ask again.';
-      }
-      if (!this.isCancellationConfirmation(userMessage)) {
-        return 'Please reply yes, yeah, yep, ndio, or confirm if you want me to cancel this booking. Ok, okay, and sawa do not confirm a cancellation.';
-      }
-      const result = await this.executeConfirmCancellationTool(customerId, draft.step);
-      return this.getCancellationCompletionReply(result);
+    if (!this.isCancellationConfirmation(userMessage)) {
+      return 'Please reply yes, yeah, yep, ndio, or confirm if you want me to cancel this booking. Ok, okay, and sawa do not confirm a cancellation.';
     }
 
-    return null;
+    const result = await this.executeConfirmCancellationTool(
+      customerId,
+      draft.step
+    );
+
+    return this.getCancellationCompletionReply(result);
   }
+
+  return null;
+}
+
 
   /** Payment questions are answered from the draft step and payment row only; they never reach the model. */
   private async getPaymentRecoveryReply(customerId: string, userMessage: string, forcedKind?: PaymentMessageKind): Promise<string | null> {
