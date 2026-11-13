@@ -18,6 +18,10 @@ model Customer {
   phone                  String?
   whatsappId             String?   @unique // WhatsApp sender ID
   instagramId            String?   @unique // Instagram sender ID
+  instagramUsername      String?   @unique
+  instagramProfileName   String?
+  instagramProfilePic    String?
+  
   messengerId            String?   @unique // Messenger sender ID
   aiEnabled              Boolean   @default(true) // AI enabled for this customer
   isAiPaused             Boolean   @default(false) // Pauses AI for this customer (e.g. during escalation)
