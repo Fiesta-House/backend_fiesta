@@ -13,14 +13,6 @@ export const SERVICE_DURATIONS: Record<string, number> = {
   'the empress': 210,
   'goddess': 300,
   'the goddess': 300,
-  // Legacy fallbacks
-  'standard': 90,
-  'economy': 120,
-  'executive': 150,
-  'gold': 150,
-  'platinum': 150,
-  'vip': 210,
-  'vvip': 210
 };
 
 export const DEFAULT_DURATION = 120;
@@ -77,7 +69,7 @@ export const ADDON_CATALOG: AddonCatalogItem[] = [
     sku: 'extra_outfit',
     name: 'Extra outfit beyond package',
     unitPrice: 4000,
-    match: /extra\s+outfit/i,
+    match: /extra\s+(?:personal\s+)?outfit/i,
     quantityFromNote: true,
     group: 'Styling & wardrobe',
     description: 'An additional outfit or look for the shoot, beyond the number of outfits included in your edition.',

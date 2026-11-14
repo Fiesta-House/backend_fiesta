@@ -66,7 +66,7 @@ export class InvoiceService {
       invoiceNumber,
       customerName: booking.customer.name,
       customerPhone: booking.customer.phone,
-      service: booking.service,
+      service: this.formatPackageDescription(pkg?.name || booking.service),
       bookingDateTime: booking.dateTime,
       subtotal: packagePrice,
       addonLines,
@@ -114,6 +114,27 @@ export class InvoiceService {
     return invoice;
   }
 
+  /** Formats known edition names for customer-facing invoices. */
+  private formatPackageDescription(service: string): string {
+    const normalized = service.trim().replace(/^the\s+/i, '').toLowerCase();
+
+    const editions: Record<string, string> = {
+      bloom: 'The Bloom',
+      muse: 'The Muse',
+      icon: 'The Icon',
+      legend: 'The Legend',
+      queen: 'The Queen',
+      empress: 'The Empress',
+      goddess: 'The Goddess',
+    };
+
+    const edition = editions[normalized];
+
+    return edition
+      ? `${edition} - Maternity Photography Session`
+      : service;
+  }
+
   /** Renders a professional one-page invoice as a PDF buffer. */
   async generatePdf(data: InvoicePdfData): Promise<Buffer> {
     return new Promise((resolve, reject) => {
@@ -127,10 +148,10 @@ export class InvoiceService {
       doc.rect(0, 0, PAGE_WIDTH, 12).fill(BRAND);
 
       doc.fillColor(INK).font('Helvetica-Bold').fontSize(20)
-        .text('Fiesta House Attire & Maternity', MARGIN, 40);
+        .text('Fiesta House Maternity', MARGIN, 40);
       doc.fillColor(MUTED).font('Helvetica').fontSize(9)
         .text('4th Avenue Parklands, Diamond Plaza Annex, Nairobi, Kenya', MARGIN, 64)
-        .text('+254 720 111928  ·  info@fiestahouseattire.com  ·  www.fiestahousematernity.com', MARGIN, 78);
+        .text('+254 720 111928  |  info@fiestahousematernity.com  |  www.fiestahousematernity.com', MARGIN, 78);
 
       doc.fillColor(BRAND).font('Helvetica-Bold').fontSize(22)
         .text('INVOICE', MARGIN, 40, { width: CONTENT_WIDTH, align: 'right' });
@@ -218,18 +239,24 @@ export class InvoiceService {
 
       // --- Payment instructions (only relevant while a balance remains) ---
       if (data.balanceDue > 0) {
-        doc.rect(MARGIN, y, CONTENT_WIDTH, 34).fill(BRAND_LIGHT);
-        doc.fillColor(BRAND).font('Helvetica-Bold').fontSize(9).text('HOW TO PAY THE BALANCE', MARGIN + 12, y + 8);
+        doc.rect(MARGIN, y, CONTENT_WIDTH, 50).fill(BRAND_LIGHT);
+        doc.fillColor(BRAND).font('Helvetica-Bold').fontSize(9)
+          .text('PAYMENT INFORMATION', MARGIN + 12, y + 8);
         doc.fillColor(INK).font('Helvetica').fontSize(9)
-          .text('Pay via M-Pesa Till Number 670241 on the day of your session, or transfer in advance.', MARGIN + 12, y + 20);
-        y += 34 + 16;
+          .text(
+            'A KSh 2,000 booking deposit secures your session. Any remaining balance is payable after your session via M-Pesa Buy Goods Till 670241.',
+            MARGIN + 12,
+            y + 21,
+            { width: CONTENT_WIDTH - 24 }
+          );
+        y += 50 + 16;
       }
 
       // --- Footer ---
       doc.moveTo(MARGIN, y).lineTo(PAGE_WIDTH - MARGIN, y).strokeColor(BORDER).lineWidth(1).stroke();
       y += 16;
       doc.fillColor(MUTED).font('Helvetica').fontSize(9)
-        .text('Thank you for choosing Fiesta House Attire & Maternity. We look forward to seeing you!', MARGIN, y, { width: CONTENT_WIDTH, align: 'center' });
+        .text('Thank you for choosing Fiesta House Maternity. We look forward to welcoming you to our studio.', MARGIN, y, { width: CONTENT_WIDTH, align: 'center' });
 
       // --- Closing brand bar, mirrors the header so the page doesn't just
       // trail off into blank space below a short line-item list ---

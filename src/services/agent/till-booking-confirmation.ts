@@ -8,20 +8,28 @@ import { notifyAdmin } from '../notifications/notification.service';
 import { SERVICE_DURATIONS, DEFAULT_DURATION } from '../../config/constants';
 import { inBusinessTimezone } from '../../utils/time';
 
-import { parseMpesaMessage } from './till-payment';
+import {
+  parseMpesaMessage,
+  isValidTillPayment,
+} from './till-payment';
 import {
   getPackageForDeposit,
   getDepositForPackage,
 } from './booking-deposit';
 
+
 export async function completeTillBooking(
   customerId: string,
   message: string
 ): Promise<string | null> {
+  // Independently validate the actual Buy Goods Till confirmation.
+  // A transaction code by itself is never sufficient.
+  if (!isValidTillPayment(message)) {
+    return null;
+  }
+
   const parsed = parseMpesaMessage(message);
 
-  // A valid receipt code is required. A vague "I've paid" message
-  // must not create a confirmed booking.
   if (!parsed.code) {
     return null;
   }

@@ -1,3 +1,4 @@
+
 import { Request, Response } from 'express';
 import prisma from '../config/prisma';
 import { googleCalendarService } from '../services/calendar/calendar.service';
@@ -9,7 +10,7 @@ import { getBookingPolicyWindow } from '../utils/booking-policy';
 import { businessDay } from '../utils/time';
 
 export class BookingController {
-  
+
   /**
    * List all bookings
    */
@@ -53,6 +54,110 @@ export class BookingController {
       return res.json({ bookings, total: bookings.length });
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Read-only monitor for active booking drafts.
+   */
+  async listBookingDrafts(_req: Request, res: Response) {
+    try {
+      const drafts = await prisma.bookingDraft.findMany({
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              whatsappId: true,
+              instagramUsername: true,
+              messengerId: true,
+              messages: {
+                take: 8,
+                orderBy: { createdAt: 'desc' },
+                select: {
+                  id: true,
+                  content: true,
+                  platform: true,
+                  direction: true,
+                  handledBy: true,
+                  createdAt: true,
+                },
+              },
+            },
+          },
+          payment: {
+            select: {
+              id: true,
+              amount: true,
+              phone: true,
+              status: true,
+              mpesaReceipt: true,
+              checkoutRequestId: true,
+              bookingId: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+
+      // BookingDraft.bookingId is a scalar, not a Prisma relation.
+      // Fetch linked bookings separately for reschedule/cancellation drafts.
+      const bookingIds = [
+        ...new Set(
+          drafts
+            .map((draft) => draft.bookingId)
+            .filter((id): id is string => Boolean(id))
+        ),
+      ];
+
+      const linkedBookings = bookingIds.length
+        ? await prisma.booking.findMany({
+            where: { id: { in: bookingIds } },
+            select: {
+              id: true,
+              service: true,
+              dateTime: true,
+              status: true,
+              recipientName: true,
+              recipientPhone: true,
+              googleEventId: true,
+            },
+          })
+        : [];
+
+      const bookingsById = new Map(
+        linkedBookings.map((booking) => [booking.id, booking])
+      );
+
+      const countsByStep = drafts.reduce<Record<string, number>>(
+        (counts, draft) => {
+          counts[draft.step] = (counts[draft.step] || 0) + 1;
+          return counts;
+        },
+        {}
+      );
+
+      const result = drafts.map((draft) => ({
+        ...draft,
+        linkedBooking: draft.bookingId
+          ? bookingsById.get(draft.bookingId) ?? null
+          : null,
+      }));
+
+      return res.json({
+        drafts: result,
+        total: result.length,
+        countsByStep,
+      });
+    } catch (error: any) {
+      console.error('Failed to list booking drafts:', error);
+      return res.status(500).json({
+        error: 'Failed to load booking drafts',
+        details: error.message,
+      });
     }
   }
 
