@@ -313,11 +313,12 @@ const aiReply = await agentService.handleMessage(
 
       await whatsappService.sendMessage(customerId, aiReply);
     } catch (error: any) {
-      console.error('Error processing debounced WhatsApp turn:', {
-        code: error?.code,
-        message: error?.message || error,
-      });
-    }
+  console.error('Error processing debounced WhatsApp turn:', {
+    code: error?.code,
+    message: error?.message || error,
+    stack: error?.stack,
+  });
+}
   }
 
   /**

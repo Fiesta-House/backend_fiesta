@@ -742,6 +742,12 @@ export async function rememberBookingSlots(
     draft = null;
   }
 
+    // Early slot capture may update an existing draft, but must never
+  // create a new booking draft. New proposals are saved by propose_booking.
+  if (!draft) {
+    return bail;
+  }
+
   const customer = await prisma.customer.findUnique({
     where: { id: customerId },
   });
