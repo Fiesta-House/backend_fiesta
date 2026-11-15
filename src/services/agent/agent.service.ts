@@ -214,7 +214,7 @@ export class AgentService {
   private static readonly ASSISTANT_INTRO = "I'm the virtual assistant for Fiesta House Maternity.";
 
   private isAskingIfHuman(message: string): boolean {
-    const text = message.toLowerCase().replace(/[â€™`]/g, "'");
+    const text = message.toLowerCase().replace(/[Ã¢â‚¬â„¢`]/g, "'");
     return /\b(?:are|r)\s+(?:you|u)\s+(?:a\s+|an\s+)?(?:real\s+|actual\s+|live\s+)?(?:human|person|bot|robot|ai|machine|chatbot|computer)\b/.test(text)
       || /\b(?:am i|is this)\s+(?:talking\s+(?:to|with)\s+|speaking\s+(?:to|with)\s+|chatting\s+(?:to|with)\s+)?(?:a\s+|an\s+)?(?:real\s+|actual\s+)?(?:human|person|bot|robot|ai|chatbot)\b/.test(text)
       || /\bwho\s+am\s+i\s+(?:talking|speaking|chatting)\s+(?:to|with)\b/.test(text)
@@ -677,10 +677,10 @@ private isAddonAdviceRequest(
 private getAddonAdviceReply(): string {
   return [
     'A few lovely options to consider are:',
-    'â€¢ Extra outfit - KSh 4,000 if youâ€™d like another look.',
-    'â€¢ Extra edited photos - KSh 1,000 each for more finished images.',
-    'â€¢ Power Suit - KSh 10,000 if it isnâ€™t already included in your edition, for a bold, structured look.',
-    'â€¢ Styled wig hire - KSh 4,000; this needs to be booked in advance.',
+    'Ã¢â‚¬Â¢ Extra outfit - KSh 4,000 if youÃ¢â‚¬â„¢d like another look.',
+    'Ã¢â‚¬Â¢ Extra edited photos - KSh 1,000 each for more finished images.',
+    'Ã¢â‚¬Â¢ Power Suit - KSh 10,000 if it isnÃ¢â‚¬â„¢t already included in your edition, for a bold, structured look.',
+    'Ã¢â‚¬Â¢ Styled wig hire - KSh 4,000; this needs to be booked in advance.',
     `You can see the full list here: ${OFFICIAL_WEBSITE_URLS.packages}`,
   ].join('\n');
 }
@@ -817,13 +817,13 @@ private getAddonAdviceReply(): string {
     const draft = await bookingDraftService.get(customerId);
     const recipient = draft?.recipientName || request?.recipient;
     if (!request?.service || !request.date || !request.time || !recipient) {
-      return 'Youâ€™re right, I mixed up the sessions. Your existing appointment will remain unchanged, and I will not treat the separate booking as confirmed. Please confirm the recipient, package, date, and time for the new session.';
+      return 'YouÃ¢â‚¬â„¢re right, I mixed up the sessions. Your existing appointment will remain unchanged, and I will not treat the separate booking as confirmed. Please confirm the recipient, package, date, and time for the new session.';
     }
 
     const duration = SERVICE_DURATIONS[request.service.toLowerCase()];
     const slotsResult = await bookingService.getAvailableSlots(request.date, duration || DEFAULT_DURATION);
     if (!isAvailableSlotList(slotsResult) && slotsResult.status === 'closed') {
-      return `Youâ€™re right, I mixed up the sessions. Your existing appointment is unchanged. The separate ${request.service} request for ${recipient} is not booked; the studio is closed on ${inBusinessTimezone(request.date).format('dddd, D MMMM')}. Please choose another date.`;
+      return `YouÃ¢â‚¬â„¢re right, I mixed up the sessions. Your existing appointment is unchanged. The separate ${request.service} request for ${recipient} is not booked; the studio is closed on ${inBusinessTimezone(request.date).format('dddd, D MMMM')}. Please choose another date.`;
     }
 
     const availableSlots: string[] = Array.isArray(slotsResult) ? slotsResult : [];
@@ -831,10 +831,10 @@ private getAddonAdviceReply(): string {
       const alternatives = availableSlots.slice(0, 4)
         .map((time) => dayjs(`2000-01-01T${time}`).format('h:mm A'))
         .join(', ');
-      return `Youâ€™re right, I mixed up the sessions. Your existing appointment is unchanged. The separate ${request.service} session for ${recipient} on ${inBusinessTimezone(request.date).format('dddd, D MMMM')} at ${dayjs(`2000-01-01T${request.time}`).format('h:mm A')} is not available, so I have not created another booking. Available times are ${alternatives || 'none'}. Which would work?`;
+      return `YouÃ¢â‚¬â„¢re right, I mixed up the sessions. Your existing appointment is unchanged. The separate ${request.service} session for ${recipient} on ${inBusinessTimezone(request.date).format('dddd, D MMMM')} at ${dayjs(`2000-01-01T${request.time}`).format('h:mm A')} is not available, so I have not created another booking. Available times are ${alternatives || 'none'}. Which would work?`;
     }
 
-    return `Youâ€™re right, I mixed up the sessions. Your existing appointment is unchanged. I understand this is a separate ${request.service} booking for ${recipient}. ${inBusinessTimezone(request.date).format('dddd, D MMMM')} at ${dayjs(`2000-01-01T${request.time}`).format('h:mm A')} is available, but it is not booked yet. What is ${recipient}â€™s full name so I can prepare the booking correctly?`;
+    return `YouÃ¢â‚¬â„¢re right, I mixed up the sessions. Your existing appointment is unchanged. I understand this is a separate ${request.service} booking for ${recipient}. ${inBusinessTimezone(request.date).format('dddd, D MMMM')} at ${dayjs(`2000-01-01T${request.time}`).format('h:mm A')} is available, but it is not booked yet. What is ${recipient}Ã¢â‚¬â„¢s full name so I can prepare the booking correctly?`;
   }
 
   private async getPastAppointmentsListReply(customerId: string): Promise<string> {
@@ -1151,10 +1151,10 @@ if (
     const professionalAdviceRequest = /\b(?:legal|financial|investment|tax)\s+advice\b|\bshould\s+i\s+(?:invest|take\s+out\s+a\s+loan)\b|\b(?:lawsuit|lawyer|attorney)\b/.test(text);
     const explicitSexualRequest = /\b(talk\s+dirty|dirty\s+talk|sexual\s+roleplay)\b/.test(text);
 
-    if (explicitSexualRequest) return 'Iâ€™ll keep things professional here, but I can definitely help you plan your Fiesta House shoot.';
+    if (explicitSexualRequest) return 'IÃ¢â‚¬â„¢ll keep things professional here, but I can definitely help you plan your Fiesta House shoot.';
     if (!medicalOrExplicitQuestion && !professionalAdviceRequest) return null;
 
-    return 'Thatâ€™s outside my studio brief; a qualified professional is the right person to ask. Iâ€™m here if you need help with a shoot or booking.';
+    return 'ThatÃ¢â‚¬â„¢s outside my studio brief; a qualified professional is the right person to ask. IÃ¢â‚¬â„¢m here if you need help with a shoot or booking.';
   }
 
   private isClearlyUnrelatedRequest(userMessage: string): boolean {
@@ -1209,7 +1209,7 @@ if (
 
   if (!this.isClearlyUnrelatedRequest(userMessage)) return null;
 
-  return 'Iâ€™m your Fiesta House studio assistant, so I stick to shoots and bookings. If you need help with a session, Iâ€™m happy to help.';
+  return 'IÃ¢â‚¬â„¢m your Fiesta House studio assistant, so I stick to shoots and bookings. If you need help with a session, IÃ¢â‚¬â„¢m happy to help.';
 }
   private shouldClarifyBookingForSomeoneElse(userMessage: string): boolean {
     return isBookingForSomeoneElseRequest(userMessage);
@@ -1787,9 +1787,34 @@ private getSystemPrompt(
     ? packagePricingLine
     : 'Use package prices only when present in Business Context; if unavailable, offer to confirm with the team rather than guess.';
 
-  const addonPricing = includeAddonPricing
+   const addonPricing = includeAddonPricing
     ? this.getAddonPricingLine(conversation)
     : 'Use exact add-on prices only when present in Business Context; if unavailable, offer to confirm with the team rather than guess.';
+
+  const editionInclusionContext = Object.entries(SEED_EDITION_INCLUSIONS)
+    .map(([name, reference]) => {
+      if (EDITIONS_PENDING_OWNER_CONFIRMATION.includes(name)) {
+        return `${name}: PENDING OWNER CONFIRMATION. Do not state its inclusions as confirmed.`;
+      }
+
+      const mountDescription = reference.inclusions.find((item) => /fine art mount/i.test(item));
+      const backdropDescription = reference.inclusions.find((item) => /balloon backdrop/i.test(item));
+      const wigDescription = reference.inclusions.find((item) => /styled wig/i.test(item));
+
+      return [
+        `${name}:`,
+        `- Session length: ${reference.duration}`,
+        `- Final edited photos: ${reference.images}`,
+        `- Professional makeup: ${reference.makeup ? 'Included' : 'Not included'}`,
+        `- Studio outfits: ${reference.outfits}`,
+        `- Outfit styling: ${reference.styling ? 'Included' : 'Not included'}`,
+        `- Hardcover photobook: ${reference.photobook ? `Included${reference.photobookSize ? ` (${reference.photobookSize})` : ''}` : 'Not included'}`,
+        `- Fine-art mount: ${reference.mount ? (mountDescription || 'Included') : 'Not included'}`,
+        `- Balloon backdrop: ${reference.balloonBackdrop ? (backdropDescription || 'Included') : 'Not included'}`,
+        `- Styled wig: ${reference.wig ? (wigDescription || 'Included') : 'Not included'}`,
+      ].join('\n');
+    })
+    .join('\n\n');
 
   return `Current Date/Time: ${now}
 Studio Local Period: ${timePeriod}
@@ -1799,6 +1824,10 @@ You are the virtual assistant for Fiesta House Maternity, a luxury maternity, ne
 First understand what the customer is actually saying and respond to that, using the full conversation for context. Decide whether a tool is needed. Only guide her toward a booking when her message or the conversation naturally calls for it.
 
 Business Context and Customer History:
+
+CANONICAL EDITION INCLUSIONS:
+${editionInclusionContext}
+
 ${businessContext}
 
 Business Context is reference material, not a checklist. Use only the parts relevant to her current message; never mention prices, packages, add-ons, links or procedures just because they appear there.
@@ -1838,14 +1867,14 @@ A13. CURRENT PAYMENT METHOD (AUTHORITATIVE): All new bookings use manual Lipa na
 
 LINK-FIRST CATALOG: for editions, packages and add-ons, share ${OFFICIAL_WEBSITE_URLS.packages} rather than listing the whole catalog. Answer a single item, or compare two, briefly, then add the link. List the catalog in chat only when she explicitly asks or cannot open the link; a bare "yes" or "show me" is not such a request. Never change prices, deposits or selected add-ons.
 
-LEGEND INCLUSION HOLD: the public page does not list a Legend wig, while local data does. Do not say a wig is included or excluded with Legend, even if retrieval says otherwise; say the team will confirm the remaining inclusions. Other verified Legend details may be answered.
+PACKAGE INCLUSION AUTHORITY: Use the current published package descriptions and canonical edition inclusion reference as the authority for what each edition includes. An item is included only when it is explicitly listed for that edition. Do not use conflicting database fields, package notes, old FAQs or retrieved knowledge to claim an unlisted item is included. If a customer asks about an item that is not listed, explain that it is not included in that edition and, where verified, give the optional add-on price. Preserve any explicit owner-confirmation safeguard for editions still pending verification.
 
 [B] TOOL-USE WORKFLOW (once [A] allows it)
 
 B1. A question about her upcoming appointment, its date, time or details is an INFO REQUEST, not a reschedule. Answer from "Upcoming Booking" and "Past Bookings" above. Do not call propose_reschedule or get_available_slots, or ask for a new date, unless she explicitly says she wants to reschedule, change, move, postpone or cancel.
 
 B2. BOOKING FLOW, IN THIS ORDER, never skipping a step:
-INTENT GATE: Before starting or advancing this flow, understand whether she is actually progressing towards a booking. Asking about an edition, price, inclusions, gowns, studio details or availability does not by itself mean she wants to book. Saying she likes an edition or is considering a date is interest, not permission to prepare a booking proposal. A direct booking request can begin the flow; a short reply can continue it when the preceding conversation clearly established that she was booking and the assistant asked for that missing detail. Do not infer booking intent merely from a complete set of stored details, a previous package discussion, or an old collecting_slots draft. An availability-only enquiry may be answered with availability information, but must not automatically become a booking proposal. Let her lead naturally; do not require a particular phrase such as “I want to book”.
+INTENT GATE: Before starting or advancing this flow, understand whether she is actually progressing towards a booking. Asking about an edition, price, inclusions, gowns, studio details or availability does not by itself mean she wants to book. Saying she likes an edition or is considering a date is interest, not permission to prepare a booking proposal. A direct booking request can begin the flow; a short reply can continue it when the preceding conversation clearly established that she was booking and the assistant asked for that missing detail. Do not infer booking intent merely from a complete set of stored details, a previous package discussion, or an old collecting_slots draft. An availability-only enquiry may be answered with availability information, but must not automatically become a booking proposal. Let her lead naturally; do not require a particular phrase such as â€œI want to bookâ€.
 a) Gather Package, Date, Time, Name, then the optional add-ons decision, then propose. Check "Known so far" and never re-ask a known package. Ask for the name only after the date and time are agreed. Ask for missing details in one question. If a date or time looks like a typo (e.g. "Sundat"), read it the way she most likely meant; ask only if genuinely ambiguous.
 b) Call get_available_slots for that date and service. If her time is taken, suggest the closest free slots.
 c) Once the time is free, ask once whether she would like optional add-ons (such as an extra outfit, styled wig hire or extra edited photos), making clear it is optional. Save an accepted add-on with add_session_note. If she declines or does not answer, move on and never ask again for this booking.
@@ -1879,8 +1908,8 @@ C5. MISSED CALLS: if she says she called the studio and nobody answered, respond
 [D] CONVERSATION STYLE
 
 D0. WARMTH AND INTENT: behave like a smart, attentive host, not a script. Work out what she means, including typos, Swahili, Sheng and half-finished thoughts, and answer that first, with the smallest reply that serves her intent.
-- Greeting: return it warmly aligned with the actual current Nairobi time period (${timePeriod}: morning 5amâ€“12pm, afternoon 12pmâ€“5pm, evening 5pm onwards). If the customer greets with the wrong time of day (e.g. says "good morning" when it is ${timePeriod.toLowerCase()}), DO NOT blindly echo their mistake. Greet with the actual time of day ("Good ${timePeriod.toLowerCase()}!") or a warm "Hello!" / "Habari!". No services, links or booking questions in greetings.
-- Banter, teasing, or slip-up corrections (e.g. she says "it's not morning though" or makes a light teasing remark): React like a charming, self-aware human host with good humor and warmth-laugh it off pleasantly (e.g. "Haha oops, you're right! Time is flying today ðŸ˜… Good evening Maryanne!" or "Oh haha, my bad! Time really got away from me ðŸ™ˆ Good evening! How can I help you today?"). NEVER respond like a cold, scripted corporate bot.
+- Greeting: return it warmly aligned with the actual current Nairobi time period (${timePeriod}: morning 5amÃ¢â‚¬â€œ12pm, afternoon 12pmÃ¢â‚¬â€œ5pm, evening 5pm onwards). If the customer greets with the wrong time of day (e.g. says "good morning" when it is ${timePeriod.toLowerCase()}), DO NOT blindly echo their mistake. Greet with the actual time of day ("Good ${timePeriod.toLowerCase()}!") or a warm "Hello!" / "Habari!". No services, links or booking questions in greetings.
+- Banter, teasing, or slip-up corrections (e.g. she says "it's not morning though" or makes a light teasing remark): React like a charming, self-aware human host with good humor and warmth-laugh it off pleasantly (e.g. "Haha oops, you're right! Time is flying today Ã°Å¸Ëœâ€¦ Good evening Maryanne!" or "Oh haha, my bad! Time really got away from me Ã°Å¸â„¢Ë† Good evening! How can I help you today?"). NEVER respond like a cold, scripted corporate bot.
 - Thanks or acknowledgement: respond briefly and warmly; do not reopen a finished topic.
 - Casual remark: answer naturally without forcing a link to photography, pregnancy or booking.
 - Feelings or personal context (body size, nerves, due date, excitement): acknowledge with one sincere, specific sentence before any information; do not assume she wants advice or a booking.
@@ -1888,12 +1917,12 @@ D0. WARMTH AND INTENT: behave like a smart, attentive host, not a script. Work o
 - Booking or a change to one: follow [A] and [B] exactly.
 Use her first name naturally when known, without forcing it into every reply. Mirror the language she writes in. Vary your wording so you never sound like a template. Warm and gracious, never gushing, never curt. Interest ("that seems interesting", "I like it") is not a booking request: respond to it warmly and let her lead, offering to help her choose or answer questions rather than asking for a date. If a request is ambiguous (for example "suggest for me"), ask one short question about what she would like suggested instead of assuming a booking. Never open a reply with her name alone. In sentences write edition names as "the Muse" or "the Bloom", not in capitals.
 
-D0b. NO ROBOTIC CORPORATE CLICHÃ‰S:
+D0b. NO ROBOTIC CORPORATE CLICHÃƒâ€°S:
 Write like a real human concierge chatting on WhatsApp, not an automated support desk or an IVR tree. Specifically:
 - NEVER say "Thanks for letting me know" or "I see-thanks for letting me know".
 - NEVER say "How can I assist you today?" or "How may I assist you?". Use natural conversational phrases like "How can I help you today?" or "What can I do for you?".
 - NEVER use formal customer service jargon like "Please be advised", "Kindly note", or "I apologize for any inconvenience".
-- When caught in a human slip or misunderstanding, own it with a brief, friendly, relatable chuckle ("Haha oops!", "My mistake!", "You're totally right ðŸ˜…"), not sterile robotic acknowledgments.
+- When caught in a human slip or misunderstanding, own it with a brief, friendly, relatable chuckle ("Haha oops!", "My mistake!", "You're totally right Ã°Å¸Ëœâ€¦"), not sterile robotic acknowledgments.
 
 D0c. DO NOT RE-ASK AN ESTABLISHED BOOKING CHOICE: when she has selected an edition as part of a genuine, active booking progression (not merely discussed, compared, asked about or expressed interest in it), do not ask again which package she wants. Interpret short replies such as "that one", "I want that", "Noo..I want that one", "yes" or "okay" against the specific question currently awaiting her answer. Continue to the next missing booking detail only when the conversation is genuinely in a booking flow. A package discussed in an ordinary enquiry is not an established booking choice, and an old draft does not turn it into one. Only re-ask if she clearly changes her mind or the choice is genuinely ambiguous.
 
@@ -2072,7 +2101,7 @@ D9. SENSITIVE DISCLOSURES: when she shares body size, health, pregnancy worries 
           ? `SUCCESSFUL PAYMENT RECORDED via M-Pesa${paidPayment.mpesaReceipt ? ` (Receipt: ${paidPayment.mpesaReceipt})` : ''}. Do not ask the customer to pay this deposit again.`
           : 'No successful payment is recorded in this database lookup. This does NOT prove the customer has not paid. If she says she already paid, offer verification with the studio team; do not automatically tell her to pay again.';
 
-        return `${booking.service} — ${appointmentDate} (booking status: ${booking.status}). Package deposit: ${depositText}. Payment record: ${paymentFact}`;
+        return `${booking.service} â€” ${appointmentDate} (booking status: ${booking.status}). Package deposit: ${depositText}. Payment record: ${paymentFact}`;
       })
     );
 
@@ -2249,7 +2278,7 @@ ${contextString}`;
           type: 'function',
           function: {
             name: 'propose_booking',
-            description: 'Prepare a booking proposal only when the customer has genuinely decided to proceed with booking and the conversation has reached the proposal stage. Having a package, date, time and name is NOT by itself permission to propose. Do NOT call this for package interest, comparisons, pricing or inclusion questions, general studio questions, tentative plans, or an availability-only enquiry. A customer saying they like or are interested in an edition is not booking intent. For a short reply such as a date, time, or “that one”, use the conversation to establish whether she is answering a question in an already active booking progression; do not treat an old draft or an earlier package discussion as permission. The required name, service, date and confirmed-free time must all be known. This only prepares a proposal and states the exact deposit; it does NOT charge anything or send payment instructions. The customer must explicitly confirm on a LATER message before confirm_booking can be called.',
+            description: 'Prepare a booking proposal only when the customer has genuinely decided to proceed with booking and the conversation has reached the proposal stage. Having a package, date, time and name is NOT by itself permission to propose. Do NOT call this for package interest, comparisons, pricing or inclusion questions, general studio questions, tentative plans, or an availability-only enquiry. A customer saying they like or are interested in an edition is not booking intent. For a short reply such as a date, time, or â€œthat oneâ€, use the conversation to establish whether she is answering a question in an already active booking progression; do not treat an old draft or an earlier package discussion as permission. The required name, service, date and confirmed-free time must all be known. This only prepares a proposal and states the exact deposit; it does NOT charge anything or send payment instructions. The customer must explicitly confirm on a LATER message before confirm_booking can be called.',
             parameters: {
               type: 'object',
               properties: {
@@ -2739,7 +2768,7 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
       ? unverifiedActionReply
       : this.isUnverifiedBookingConfirmation(modelContent, userMessage, history, upcomingBooking)
       && !rescheduleAppliedThisTurn
-      ? 'I canâ€™t confirm a new booking from that message alone. No new appointment has been confirmed or paid for. I can check whether the requested date and time are available.'
+      ? 'I canÃ¢â‚¬â„¢t confirm a new booking from that message alone. No new appointment has been confirmed or paid for. I can check whether the requested date and time are available.'
       : null) || repeatedQuestionReply;
     let safeModelContent = codeOwnedReply || this.formatCustomerReply(modelContent, userMessage, history);
     let verifierBlocked = false;
@@ -3353,7 +3382,7 @@ private async captureMpesaMessage(
     const includesThanks = /\b(thanks|thank you|appreciate|appreciated)\b/.test(normalized);
     if (awaitingConfirmation && !includesThanks && /^(?:ok|okay|alright|sawa)$/.test(normalized)) return false;
     const lastAssistantText = [...history].reverse().find((message) => message.role === 'assistant')?.content || '';
-    if (/\bpayment link\b|\bi['â€™]ll send you\b|\breserved the\b|\bi['â€™]ve reserved\b/i.test(lastAssistantText)) return false;
+    if (/\bpayment link\b|\bi['Ã¢â‚¬â„¢]ll send you\b|\breserved the\b|\bi['Ã¢â‚¬â„¢]ve reserved\b/i.test(lastAssistantText)) return false;
 
     return true;
   }
@@ -3363,7 +3392,7 @@ private async captureMpesaMessage(
     const normalized = userMessage.trim().toLowerCase().replace(/[!?.,]/g, ' ').replace(/\s+/g, ' ');
     if (/\b(no|not|don't|dont|cancel|wait|hold)\b/.test(normalized)) return false;
     return /\b(?:yes+|yeah|yep|ndio|confirm(?:ed)?|go[\s-]?ahead|proceed)\b/.test(normalized)
-      || /^(?:let['â€™]?s|let us) do it(?: then)?$/.test(normalized.trim());
+      || /^(?:let['Ã¢â‚¬â„¢]?s|let us) do it(?: then)?$/.test(normalized.trim());
   }
 
   private isCancellationConfirmation(userMessage: string): boolean {

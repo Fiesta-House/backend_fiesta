@@ -1,6 +1,6 @@
 
 export const MAX_AGENT_COMPLETION_TOKENS = Math.min(2_500, Math.max(200, Number(process.env.AI_MAX_COMPLETION_TOKENS) || 1500));
-export const MAX_RAG_CONTEXT_CHUNKS = 2;
+export const MAX_RAG_CONTEXT_CHUNKS = 3;
 // Booking flows routinely span add-on talk + date/time + affirmations; 6 was
 // truncating the established edition out of the prompt after a couple of recovery turns.
 export const MAX_HISTORY_MESSAGES = 12;

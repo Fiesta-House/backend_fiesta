@@ -30,8 +30,8 @@ export const SEED_EDITION_INCLUSIONS: Record<string, EditionInclusionReference> 
   },
   'THE LEGEND': {
     duration: '2.5 hours', images: 15, makeup: true, outfits: 4, styling: true,
-    photobook: true, photobookSize: '8x8"', mount: false, balloonBackdrop: false, wig: true,
-    inclusions: ['Session length: 2.5 hours', '15 final edited photos', 'Professional makeup', '4 studio outfits with styling', '1 styled wig', 'Hardcover photobook (8x8")'],
+    photobook: true, photobookSize: '8x8"', mount: false, balloonBackdrop: false, wig: false,
+    inclusions: ['Session length: 2.5 hours', '15 final edited photos', 'Professional makeup', '4 studio outfits with styling', 'Hardcover photobook (8x8")'],
   },
   'THE QUEEN': {
     duration: '3 hours', images: 20, makeup: true, outfits: 4, styling: true,
