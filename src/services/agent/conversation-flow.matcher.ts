@@ -90,7 +90,7 @@ export class ConversationFlowMatcher {
     const text = message.toLowerCase().trim();
     const namesEdition = PACKAGE_NAMES_FOR_EXTRACTION.some((name) => new RegExp(`\\b${name.replace(/^THE /, '')}\\b`, 'i').test(text));
     const editionQuestion = new RegExp(`\\b(?:what|which|share|show|list|tell)\\b.*\\b${EDITION_TERM_PATTERN}\\b|\\byour\\s+${EDITION_TERM_PATTERN}\\b`, 'i');
-    const requestedDetail = namesEdition && /\b(?:include|includes|inclusions|come with|tell me about|details|how much|price|cost)\b/i.test(text);
+    const requestedDetail = namesEdition && /\b(?:include|includes|included|inclusions?|come with|comes with|do i get|does it have|does it include|is .{1,50} included|tell me about|details|how much|price|cost)\b/i.test(text);
     const editionNameOnly = PACKAGE_NAMES_FOR_EXTRACTION.some((name) => [name.toLowerCase(), name.replace(/^THE /, '').toLowerCase()].includes(text.replace(/[.!?]+$/, '')));
     const choosesFromOverview = editionNameOnly
       && history.some((entry) => entry.role === 'assistant' && entry.content.includes(EDITION_CATALOG_HEADER));

@@ -46,8 +46,8 @@ export function buildPackageCard(pkg: {
     : differingInclusionFields(canonicalName, pkg).length === 0 ? SEED_EDITION_INCLUSIONS[canonicalName]?.inclusions : undefined;
   if (inclusions) {
     const visible = isLegend ? inclusions.filter(item => !/\bwig/i.test(item)) : inclusions;
-    const legendNote = isLegend ? '\nThe team will confirm the remaining inclusions for you.' : '';
-    return `${pkg.name} - Ksh ${pkg.price.toLocaleString()}\n${visible.map((item) => `- ${item}`).join('\n')}${legendNote}`;
+
+    return `${pkg.name} - Ksh ${pkg.price.toLocaleString()}\n${visible.map((item) => `- ${item}`).join('\n')}`;
   }
   const items: string[] = [];
   if (pkg.duration) items.push(`Session length: ${pkg.duration}`);
@@ -76,7 +76,7 @@ export function buildPackageCard(pkg: {
     items.push('Photo mount (size to be confirmed)');
   }
 
-  return `${pkg.name} - Ksh ${pkg.price.toLocaleString()}\n${items.map((item) => `- ${item}`).join('\n')}${isLegend ? '\nThe team will confirm the remaining inclusions for you.' : ''}`;
+  return `${pkg.name} - Ksh ${pkg.price.toLocaleString()}\n${items.map((item) => `- ${item}`).join('\n')}`;
 }
 
 export async function getPackageCatalogReply(_showInclusions = false, userMessage = ''): Promise<string | null> {
@@ -108,8 +108,7 @@ export async function getPackageCatalogReply(_showInclusions = false, userMessag
       const canonicalName = canonicalEditionName(pkg.name);
       const differences = differingInclusionFields(canonicalName, pkg);
       if (differences.length) console.warn('Edition fields disagree with seed inclusion reference:', pkg.name, differences.join(', '));
-      return EDITIONS_PENDING_OWNER_CONFIRMATION.includes(canonicalName)
-        || differences.length > 0;
+      return EDITIONS_PENDING_OWNER_CONFIRMATION.includes(canonicalName);
     };
     const requested = editions.filter((pkg) => new RegExp(`\\b${pkg.name.replace(/^THE /, '')}\\b`, 'i').test(userMessage));
     if (requested.length === 1) {
