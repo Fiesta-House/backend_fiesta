@@ -637,7 +637,9 @@ private async getVerifierTemplateReply(
   }
 
   if (this.isAddonAdviceRequest(userMessage, history)) {
-    return this.getAddonAdviceReply();
+
+    return null;
+
   }
 
   if (this.conversationFlows.isPackageCatalogRequest(userMessage, history)) {
@@ -2159,8 +2161,7 @@ ${contextString}`;
         currentMessageMentionsPackage &&
         !currentMessageMentionsAddon);
 
-    const includeAddonPricing =
-      currentMessageRequestsPricing && currentMessageMentionsAddon;
+    const includeAddonPricing = true;
 
     const packagePricingLine = includePackagePricing
       ? await this.getPackagePricingLine()
