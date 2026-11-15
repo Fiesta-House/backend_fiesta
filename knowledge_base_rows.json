@@ -151,13 +151,13 @@
   },
   {
     "id": "cmo8l2wjo000f10wyuaounzns",
-    "question": "Do you provide hair styling?",
-    "answer": "We provide basic hair styling with all sessions. Professional wig styling and installation are also available for KSH 3,000—please just let us know in advance so we can prepare accordingly.",
+    "question": "Do you provide hair styling and wig services?",
+    "answer": "Basic hair styling is provided with sessions. For wig services, Fiesta House styled wig hire costs KSh 4,000 per wig and must be booked in advance. Wig styling only costs KSh 3,000 per wig when the customer brings their own wig, and must also be booked in advance. These are two different services.",
     "category": "Services",
     "embedding": "[]",
     "mediaUrls": "[]",
     "createdAt": "2026-04-21 12:12:03.012",
-    "updatedAt": "2026-04-21 12:26:08.856"
+    "updatedAt": "2026-11-14T20:50:55.014Z"
   },
   {
     "id": "cmo8l2wnv000g10wypjih4pl1",
@@ -191,13 +191,13 @@
   },
   {
     "id": "cmo8l2x0c000j10wycizyo4p2",
-    "question": "Do the packages include video or reels?",
-    "answer": "No, professional reels are offered at a fee. We can take behind-the-scenes for free using our studio phone.",
+    "question": "Do you offer professional video Reels?",
+    "answer": "Yes. A professionally produced Reel is included in The Goddess package. Customers choosing another edition can request a Professional Reel as an additional service. The add-on price is quoted according to package tier and must be booked in advance. Do not confuse the included Goddess Reel with an add-on for other editions.",
     "category": "Services",
     "embedding": "[]",
     "mediaUrls": "[]",
     "createdAt": "2026-04-21 12:12:03.613",
-    "updatedAt": "2026-04-21 12:26:09.523"
+    "updatedAt": "2026-11-14T20:50:55.014Z"
   },
   {
     "id": "cmo8l2x4j000k10wy7nae1o9l",
@@ -401,13 +401,13 @@
   },
   {
     "id": "cmo8l2zza001410wyvg257vdu",
-    "question": "Can I get raw files?",
-    "answer": "Yes, raw files are available at an extra fee.",
+    "question": "Can I get raw files from my photoshoot?",
+    "answer": "Yes. Raw files are available at an additional cost, quoted according to the selected package tier. There is no single flat price for every package.",
     "category": "Policies",
     "embedding": "[]",
     "mediaUrls": "[]",
     "createdAt": "2026-04-21 12:12:07.462",
-    "updatedAt": "2026-04-21 12:26:13.121"
+    "updatedAt": "2026-11-14T20:50:55.014Z"
   },
   {
     "id": "cmo8l303j001510wyws86d5xc",
@@ -671,43 +671,43 @@
   },
   {
     "id": "additions_all",
-    "question": "What additions, extra services, or add-ons do you offer?",
-    "answer": "Here are our Additions & Extra Services (Rate Card 2026):\n- Extra edited photo: KSH 1,000 per photo\n- Extra digital art edit: KSH 3,000 per photo\n- Extra outfit beyond package: KSH 4,000 per outfit\n- Extra professional makeup: KSH 3,500 per session\n- Fiesta House Power Suit (where not included): KSH 10,000\n- Fiesta House styled wig hire: KSH 4,000 per wig (book in advance)\n- Wig styling only: KSH 3,000 per wig (book in advance)\n- Suspending Concept: KSH 7,000\n- Goddess Sculpture Set (where not included): KSH 15,000\n- Professional Reel: quoted by package tier (book in advance)\n- Raw files: quoted by package tier",
+    "question": "What add-ons and extra services are available at Fiesta House Maternity?",
+    "answer": "Fiesta House Maternity offers the following optional add-ons. They are separate from the package price unless the selected edition already includes the service.\n\nIMAGE AND DELIVERY\n- Extra edited photo: KSh 1,000 per photo. An additional standard edited image beyond the photos included in the package.\n- Extra digital art edit: KSh 3,000 per photo. A creative, artistically produced edit, distinct from a standard extra edited photo.\n- Raw files: Available at an additional cost, quoted according to the selected package tier.\n\nSTYLING AND WARDROBE\n- Extra outfit: KSh 4,000 per outfit beyond the outfits included in the package.\n- Extra professional makeup: KSh 3,500 per session.\n- Fiesta House Power Suit: KSh 10,000 where it is not already included. It is included in The Empress and The Goddess.\n- Fiesta House styled wig hire: KSh 4,000 per wig. Must be booked in advance.\n- Wig styling only: KSh 3,000 per wig when the customer brings their own wig. Must be booked in advance.\n\nCREATIVE EXPERIENCES\n- Suspending Concept: KSh 7,000. A specialised creative maternity concept; production requirements and availability should be confirmed.\n- Goddess Sculpture Set: KSh 15,000 where it is not already included. The Goddess package includes a choice between the custom balloon backdrop with flowers and the Goddess Sculpture Set.\n- Professional Reel: Available as an additional service, quoted according to package tier and booked in advance. The Goddess package already includes one professionally produced Reel.\n\nDo not confuse standard extra edited photos with digital art edits, studio wig hire with styling a customer's own wig, or services already included in a package with paid add-ons.",
     "category": "Services",
     "embedding": "[]",
     "mediaUrls": "[]",
     "createdAt": "2026-09-14 14:00:00.000",
-    "updatedAt": "2026-09-14 14:00:00.000"
+    "updatedAt": "2026-11-14T20:50:55.012Z"
   },
   {
     "id": "additions_items",
-    "question": "How much are extra photos, outfits, makeup, power suit, wigs, or concepts?",
-    "answer": "Individual Additions Pricing:\n• Extra edited photo: KSH 1,000 per photo\n• Extra digital art edit: KSH 3,000 per photo\n• Extra outfit beyond package: KSH 4,000 per outfit\n• Extra professional makeup: KSH 3,500 per session\n• Fiesta House Power Suit: KSH 10,000\n• Styled wig hire: KSH 4,000 per wig\n• Wig styling only: KSH 3,000 per wig\n• Suspending Concept: KSH 7,000\n• Goddess Sculpture Set: KSH 15,000\n• Professional Reel: quoted by package tier\n• Raw files: quoted by package tier",
+    "question": "Which add-ons have prices that depend on the package?",
+    "answer": "Two Fiesta House Maternity add-ons have package-dependent pricing:\n- Raw files: Available at an additional cost, quoted according to the selected package tier.\n- Professional Reel: Quoted according to the selected package tier and must be booked in advance. The Goddess package already includes one professionally produced Reel.\n\nThere is no single flat price to quote for either service. Ask which package edition the customer is considering before discussing the applicable price. Do not invent a price or promise an unconfirmed follow-up.",
     "category": "Services",
     "embedding": "[]",
     "mediaUrls": "[]",
     "createdAt": "2026-09-14 14:00:00.000",
-    "updatedAt": "2026-09-14 14:00:00.000"
+    "updatedAt": "2026-11-14T20:50:55.013Z"
   },
   {
     "id": "power_suit_description",
-    "question": "What is the Power Suit? What does the Fiesta House Power Suit look like? What is the Power Suit vibe?",
-    "answer": "Power Suit: A bold, sophisticated maternity look designed for the mother who wants to make a statement. The Power Suit combines tailored elegance with maternity glamour — think structured blazer, stylish trousers or coordinated pieces, statement accessories, and confident poses. It creates a strong, modern, editorial feel while celebrating the beauty of pregnancy. The vibe: Powerful • Elegant • Modern • Confident • Editorial. Perfect for mums who want something different from the traditional flowing maternity gown. The Fiesta House Power Suit is available as an add-on for KSH 10,000 and is included with THE EMPRESS and THE GODDESS editions.",
+    "question": "What is the Fiesta House Power Suit? What does it look like and how much does it cost?",
+    "answer": "The Fiesta House Power Suit is a bold, sophisticated maternity look designed for a modern editorial photoshoot. It combines tailored elegance with maternity glamour, such as a structured blazer, stylish trousers or coordinated pieces, statement accessories and confident posing. Its overall feel is powerful, elegant, modern and editorial.\n\nThe Power Suit costs KSh 10,000 when added to an edition that does not already include it. It is included in The Empress and The Goddess editions.",
     "category": "Services",
     "embedding": "[]",
     "mediaUrls": "[]",
     "createdAt": "2026-10-09 12:00:00.000",
-    "updatedAt": "2026-10-09 12:00:00.000"
+    "updatedAt": "2026-11-14T20:50:55.013Z"
   },
   {
     "id": "addon_details",
-    "question": "What add-ons and extras do you offer? What does each add-on include, cost, and does it need booking in advance?",
-    "answer": "Add-ons are separate from the edition price unless your edition already includes them. They are added to the balance, not the deposit.\nIMAGE & DELIVERY\n- Extra edited photo: KSH 1,000 per photo. An additional individually edited photo beyond the number included in your edition (not a Digital Art Edit).\n- Extra digital art edit: KSH 3,000 per photo. A more creative, artistically produced image beyond standard editing.\n- Raw files: quoted by package tier. The team confirms the price.\nSTYLING & WARDROBE\n- Extra outfit beyond package: KSH 4,000 per outfit. An additional look beyond the outfits included in your edition.\n- Extra professional makeup: KSH 3,500 per session. An additional makeup service beyond the makeup your edition includes.\n- Fiesta House Power Suit: KSH 10,000 where not included. Bold, tailored, editorial maternity look. Included with THE EMPRESS and THE GODDESS.\n- Styled wig hire: KSH 4,000 per wig. Book in advance; a specific wig is confirmed by the team.\n- Wig styling only: KSH 3,000 per wig. Styling of a wig you already own. Book in advance.\nCREATIVE PRODUCTION\n- Suspending Concept: KSH 7,000. A specialised creative maternity concept; the team confirms production requirements and availability.\n- Goddess Sculpture Set: KSH 15,000 where not included. A premium goddess, sculptural styled set. Included with THE GODDESS.\n- Professional Reel: quoted by package tier. Book in advance. Included with THE GODDESS.",
+    "question": "What does each Fiesta House Maternity add-on include, how much does it cost, and does it require advance booking?",
+    "answer": "ADD-ON PRICING AND DETAILS\n\nIMAGE AND DELIVERY\n- Extra edited photo: KSh 1,000 per photo. A standard individually edited image beyond the package allowance.\n- Extra digital art edit: KSh 3,000 per photo. A creative artistic edit, distinct from standard photo editing.\n- Raw files: Available at an additional cost quoted according to package tier. Do not guess the price.\n\nSTYLING AND WARDROBE\n- Extra outfit: KSh 4,000 per outfit beyond the package allowance.\n- Extra professional makeup: KSh 3,500 per session.\n- Fiesta House Power Suit: KSh 10,000 where not included. It is included in The Empress and The Goddess.\n- Fiesta House styled wig hire: KSh 4,000 per wig. This is a studio-provided wig and must be booked in advance.\n- Wig styling only: KSh 3,000 per wig. For styling a customer-provided wig; advance booking is required. This is different from hiring a studio wig.\n\nCREATIVE EXPERIENCES\n- Suspending Concept: KSh 7,000. A specialised creative maternity concept; confirm production requirements and availability.\n- Goddess Sculpture Set: KSh 15,000 where not included. The Goddess package includes a choice between the custom balloon backdrop with flowers and the Goddess Sculpture Set.\n- Professional Reel: Quoted according to package tier and must be booked in advance. The Goddess package includes one professionally produced Reel.\n\nThe add-on price should only be charged when the selected package does not already include that service. Do not assume that every add-on is charged on top of every package.",
     "category": "Services",
     "embedding": "[]",
     "mediaUrls": "[]",
     "createdAt": "2026-10-09 12:00:00.000",
-    "updatedAt": "2026-10-09 12:00:00.000"
+    "updatedAt": "2026-11-14T20:50:55.013Z"
   },
   {
     "id": "bespoke_custom",
@@ -728,5 +728,125 @@
     "mediaUrls": "[]",
     "createdAt": "2026-09-14 14:00:00.000",
     "updatedAt": "2026-09-14 14:00:00.000"
+  },
+  {
+    "id": "faq_addon_extra_edited_photo_20261114",
+    "question": "Can I buy more edited photos? How much is an extra photo?",
+    "answer": "Yes. You can request additional standard edited photos beyond the number included in your package. Each extra edited photo costs KSh 1,000. This is different from an extra digital art edit, which costs KSh 3,000 per photo.",
+    "category": "Services",
+    "embedding": [],
+    "mediaUrls": [],
+    "createdAt": "2026-11-14T20:50:55.014Z",
+    "updatedAt": "2026-11-14T20:50:55.014Z"
+  },
+  {
+    "id": "faq_addon_digital_art_20261114",
+    "question": "What is a digital art edit and how much does it cost?",
+    "answer": "An extra digital art edit is a creative, artistically produced image beyond the standard photo edits. It costs KSh 3,000 per photo. It is different from an extra standard edited photo, which costs KSh 1,000.",
+    "category": "Services",
+    "embedding": [],
+    "mediaUrls": [],
+    "createdAt": "2026-11-14T20:50:55.014Z",
+    "updatedAt": "2026-11-14T20:50:55.014Z"
+  },
+  {
+    "id": "faq_addon_raw_files_20261114",
+    "question": "Can I receive my maternity photos as raw or unedited files? How much do raw files cost?",
+    "answer": "Raw files are available at an additional cost. Their price is quoted according to the selected package tier, rather than being one fixed price for every customer. Ask which package edition the customer is considering before discussing the applicable price. Do not invent a price.",
+    "category": "Services",
+    "embedding": [],
+    "mediaUrls": [],
+    "createdAt": "2026-11-14T20:50:55.014Z",
+    "updatedAt": "2026-11-14T20:50:55.014Z"
+  },
+  {
+    "id": "faq_addon_extra_outfit_20261114",
+    "question": "Can I add another outfit to my maternity photoshoot?",
+    "answer": "Yes. An additional outfit beyond the number included in the selected package costs KSh 4,000 per outfit.",
+    "category": "Services",
+    "embedding": [],
+    "mediaUrls": [],
+    "createdAt": "2026-11-14T20:50:55.014Z",
+    "updatedAt": "2026-11-14T20:50:55.014Z"
+  },
+  {
+    "id": "faq_addon_extra_makeup_20261114",
+    "question": "Can I book extra professional makeup? How much does it cost?",
+    "answer": "Additional professional makeup is available at KSh 3,500 per session. Professional makeup already included in a package should not be presented as an extra charge.",
+    "category": "Services",
+    "embedding": [],
+    "mediaUrls": [],
+    "createdAt": "2026-11-14T20:50:55.014Z",
+    "updatedAt": "2026-11-14T20:50:55.014Z"
+  },
+  {
+    "id": "faq_addon_studio_wig_hire_20261114",
+    "question": "Do you provide wigs for maternity photoshoots? Can I hire a wig?",
+    "answer": "Fiesta House styled wig hire is available at KSh 4,000 per wig. This is the studio-provided wig hire option and must be booked in advance. It is different from wig styling only, which costs KSh 3,000 per wig when the customer brings their own wig. Check the selected package inclusions before quoting a wig as an extra.",
+    "category": "Services",
+    "embedding": [],
+    "mediaUrls": [],
+    "createdAt": "2026-11-14T20:50:55.014Z",
+    "updatedAt": "2026-11-14T20:50:55.014Z"
+  },
+  {
+    "id": "faq_addon_own_wig_styling_20261114",
+    "question": "Can I bring my own wig for styling? How much is wig styling only?",
+    "answer": "Yes. Wig styling only is available for KSh 3,000 per wig when the customer brings their own wig. This service must be booked in advance. It is different from Fiesta House styled wig hire, which costs KSh 4,000 per wig.",
+    "category": "Services",
+    "embedding": [],
+    "mediaUrls": [],
+    "createdAt": "2026-11-14T20:50:55.014Z",
+    "updatedAt": "2026-11-14T20:50:55.014Z"
+  },
+  {
+    "id": "faq_addon_suspending_20261114",
+    "question": "What is the Suspending Concept and how much does it cost?",
+    "answer": "The Suspending Concept is a specialised creative maternity photoshoot concept. It costs KSh 7,000. Production requirements and availability should be confirmed before promising the concept for a particular session.",
+    "category": "Services",
+    "embedding": [],
+    "mediaUrls": [],
+    "createdAt": "2026-11-14T20:50:55.014Z",
+    "updatedAt": "2026-11-14T20:50:55.014Z"
+  },
+  {
+    "id": "faq_addon_sculpture_20261114",
+    "question": "Can I have the Goddess Sculpture Set? How much does it cost?",
+    "answer": "The Goddess Sculpture Set is a premium sculptural maternity set. It costs KSh 15,000 where it is not already included. The Goddess package includes a choice between the custom balloon backdrop with flowers and the Goddess Sculpture Set, so do not describe the sculpture set as an additional charge when the customer is choosing it as their included Goddess option.",
+    "category": "Services",
+    "embedding": [],
+    "mediaUrls": [],
+    "createdAt": "2026-11-14T20:50:55.014Z",
+    "updatedAt": "2026-11-14T20:50:55.014Z"
+  },
+  {
+    "id": "faq_addon_professional_reel_20261114",
+    "question": "What is a Professional Reel? Can I add a Reel to my maternity photoshoot and how much does it cost?",
+    "answer": "A Professional Reel is a professionally produced video capturing highlights of the maternity photoshoot. It is included in The Goddess package. Customers choosing another edition can request it as an additional service. The add-on price is quoted according to package tier, and it must be booked in advance. Do not invent a duration, editing features, delivery format or price that has not been confirmed.",
+    "category": "Services",
+    "embedding": [],
+    "mediaUrls": [],
+    "createdAt": "2026-11-14T20:50:55.014Z",
+    "updatedAt": "2026-11-14T20:50:55.014Z"
+  },
+  {
+    "id": "faq_addon_power_suit_20261114",
+    "question": "Can I add the Fiesta House Power Suit to my package? How much is it?",
+    "answer": "The Fiesta House Power Suit is available for KSh 10,000 when it is not already included in the selected package. It is included in The Empress and The Goddess editions. It is a tailored, sophisticated maternity look with a bold, modern editorial feel.",
+    "category": "Services",
+    "embedding": [],
+    "mediaUrls": [],
+    "createdAt": "2026-11-14T20:50:55.014Z",
+    "updatedAt": "2026-11-14T20:50:55.014Z"
+  },
+  {
+    "id": "faq_addon_reel_package_20261114",
+    "question": "Which package includes a professionally produced Reel?",
+    "answer": "The Goddess package includes one professionally produced Reel. Customers choosing another edition can request a Professional Reel as an additional service. Its price is quoted according to package tier, and it must be booked in advance.",
+    "category": "Services",
+    "embedding": [],
+    "mediaUrls": [],
+    "createdAt": "2026-11-14T20:50:55.014Z",
+    "updatedAt": "2026-11-14T20:50:55.014Z"
   }
 ]
