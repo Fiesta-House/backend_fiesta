@@ -47,7 +47,7 @@ export async function escalate(
   escalationType: string,
   description: string,
   sentimentScore?: number
-): Promise<void> {
+): Promise<boolean> {
   try {
     await prisma.escalation.create({
       data: {
