@@ -28,7 +28,7 @@ import { catalogLinkFollowUp } from './catalog-policy';
 import { OFFICIAL_WEBSITE_URLS } from './constants';
 import { isBookingPolicyQuestion, isDeferral, isOpeningHoursQuestion, isPlainGreeting, isWalkInQuestion } from './conversation-flow.matcher';
 import { isConfirmedSessionFollowUp } from './appointment-replies';
-import { emojiReplyType, stripAssistantEmojis } from './emoji-policy';
+import { emojiReplyType, isOnlyEmojis, stripAssistantEmojis } from './emoji-policy';
 import { getPackageChangeReply, getPackageSwitchAnswerReply, isPackageChangeRequest, isPackageSwitchAnswer } from './package-replies';
 
 export type RouteOutcome = {
@@ -310,6 +310,12 @@ export function createMessageRoutes(
       when: () => this.isPostActionAcknowledgement(userMessage, history),
       handle: () => {
         const lastAssistant = [...history].reverse().find(m => m.role === 'assistant')?.content || '';
+        if (isOnlyEmojis(userMessage)) {
+          if (/session-packages|catches your eye|browse/i.test(lastAssistant)) {
+            return 'Take your time looking through our editions! Let me know if any questions come up or if one catches your eye. 🤍';
+          }
+          return '🤍 Let me know if you need any other details or have any questions!';
+        }
         if (lastAssistant.includes(BUDGET_HANDOFF_REPLY) || /passed your question to the studio team|team will pick this up|team will confirm/i.test(lastAssistant)) {
           return 'You are welcome. 🤍 A member of our team will be in touch with you shortly.';
         }

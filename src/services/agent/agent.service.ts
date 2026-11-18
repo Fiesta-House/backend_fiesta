@@ -33,7 +33,7 @@ import { BUDGET_HANDOFF_REPLY } from './constants';
 import { BRAND_RULES, VOICE_RULES, UNKNOWN_ANSWER_REPLY } from './constants';
 import { editionInText, isCustomerNameQuestion, repeatedCollectionQuestion, savedCustomerNameReply } from './reply-voice';
 import { enforceSlogan } from './slogan-guard';
-import { applyEmojiPolicy, emojiReplyType, emojisIn, enforceEmojiPolicy, stripAssistantEmojis, templateEmojiReply, EMOJI_PROMPT_RULE, type EmojiReplyType } from './emoji-policy';
+import { applyEmojiPolicy, emojiReplyType, emojisIn, enforceEmojiPolicy, isOnlyEmojis, stripAssistantEmojis, templateEmojiReply, EMOJI_PROMPT_RULE, type EmojiReplyType } from './emoji-policy';
 import { claimCatalogLink, explicitCatalogListRequest, type CatalogKind } from './catalog-policy';
 import { ADDON_LINK_REPLY, EDITION_LINK_REPLY } from './constants';
 import { bookingProgressReply, addonPickQuestion, carryOverQuestion, nextStep, openTimesReply, sampleSlots, STEP_QUESTIONS, welcomePrefix } from './booking-progress';
@@ -621,6 +621,13 @@ export class AgentService {
     } catch {
       console.warn('[AGENT_FLOW] Greeting booking lookup failed; using the general welcome.');
     }
+    if (history.length > 0) {
+      if (this.isNaturalAssistantModeEnabled()) {
+        return null;
+      }
+      return 'Welcome back! How can I help you today?';
+    }
+
     return buildBusinessIntroductionReply();
   }
 
@@ -647,6 +654,13 @@ private async getVerifierTemplateReply(
   }
 
   if (isPlainGreeting(userMessage)) {
+    if (history.length > 0) {
+      if (this.isNaturalAssistantModeEnabled()) {
+        return null;
+      }
+      return 'Welcome back! How can I help you today?';
+    }
+
     return buildBusinessIntroductionReply();
   }
 
@@ -1806,8 +1820,8 @@ private getSystemPrompt(
         `- Session length: ${reference.duration}`,
         `- Final edited photos: ${reference.images}`,
         `- Professional makeup: ${reference.makeup ? 'Included' : 'Not included'}`,
-        `- Studio outfits: ${reference.outfits}`,
-        `- Outfit styling: ${reference.styling ? 'Included' : 'Not included'}`,
+        `- Studio outfits for the expectant mother: ${reference.outfits}`,
+        `- Outfit styling for the expectant mother: ${reference.styling ? 'Included' : 'Not included'}`,
         `- Hardcover photobook: ${reference.photobook ? `Included${reference.photobookSize ? ` (${reference.photobookSize})` : ''}` : 'Not included'}`,
         `- Fine-art mount: ${reference.mount ? (mountDescription || 'Included') : 'Not included'}`,
         `- Balloon backdrop: ${reference.balloonBackdrop ? (backdropDescription || 'Included') : 'Not included'}`,
@@ -1827,6 +1841,13 @@ Business Context and Customer History:
 
 CANONICAL EDITION INCLUSIONS:
 ${editionInclusionContext}
+
+AUTHORITATIVE PARTICIPANT AND WARDROBE POLICY:
+- Fiesta House studio maternity gowns, studio outfits and outfit styling are provided exclusively for the expectant mother.
+- Partners, toddlers, children, other family members and friends joining a session must bring and wear their own clothing. The studio does not provide or style outfits for them.
+- The expectant mother may choose from the studio wardrobe or bring her own outfits, subject to the selected package outfit allowance and applicable extra-outfit terms.
+- Package outfit counts and included outfit styling always refer to the expectant mother, never to accompanying participants.
+- Apply this policy across all platforms and phrasings. Answer naturally and directly; do not imply that accompanying participants can choose, borrow or receive studio outfits.
 
 ${businessContext}
 
@@ -1912,6 +1933,8 @@ D0. WARMTH AND INTENT: behave like a smart, attentive host, not a script. Work o
 - Banter, teasing, or slip-up corrections (e.g. she says "it's not morning though" or makes a light teasing remark): React like a charming, self-aware human host with good humor and warmth-laugh it off pleasantly (e.g. "Haha oops, you're right! Time is flying today Ã°Å¸Ëœâ€¦ Good evening Maryanne!" or "Oh haha, my bad! Time really got away from me Ã°Å¸â„¢Ë† Good evening! How can I help you today?"). NEVER respond like a cold, scripted corporate bot.
 - Thanks or acknowledgement: respond briefly and warmly; do not reopen a finished topic.
 - Casual remark: answer naturally without forcing a link to photography, pregnancy or booking.
+- Standalone emojis or reactions (e.g. 😊, ❤️, 👍, 🙏): When she responds with an emoji reaction, respond with a short warm note matching the context (e.g. after sharing package info: "Take your time browsing through the editions! Let me know if any questions come up or if one catches your eye. 🤍", or after completing an answer: "🤍 Let me know if you need any other details!"). NEVER greet with a cold opener like "Hi there! How can I help you today?".
+- Returning customer greetings: When a customer with recent chat history greets again (e.g. says "Hello" or "Good afternoon" after a break), greet her warmly in alignment with the Nairobi time period (e.g. "Good afternoon!" or "Hello! Welcome back.") and naturally continue or ask how you can help. NEVER re-introduce the studio or ask "What kind of session are you planning?" as if meeting her for the first time.
 - Feelings or personal context (body size, nerves, due date, excitement): acknowledge with one sincere, specific sentence before any information; do not assume she wants advice or a booking.
 - Studio question: answer it directly from verified information.
 - Booking or a change to one: follow [A] and [B] exactly.
@@ -2813,6 +2836,7 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
         console.info(`[AGENT_FLOW] verifier=retry correction_chars=${correctionChars}`);
         const correction = await this.createCompletionWithToolNameGuard({
           model: CHAT_MODEL, temperature: 0.3, max_completion_tokens: MAX_AGENT_COMPLETION_TOKENS,
+          groqReasoningEffort: 'low',
           messages: [...messages, { role: 'assistant', content: modelContent }, {
             role: 'system', content: correctionText,
           }],
@@ -2821,6 +2845,9 @@ const editionKey = (value: unknown) => String(value || '').toLowerCase().replace
         const message = correction.response.choices[0].message;
         if (message.tool_calls?.length) throw new Error('Verifier correction must not call tools.');
         const reply = message.content?.trim() || '';
+        if (!reply) {
+          throw new Error('Verifier correction returned empty text.');
+        }
         if (this.getUnverifiedActionReply(reply, { rescheduled: rescheduleAppliedThisTurn, cancelled: cancelledThisTurn, noteSaved: noteSavedThisTurn })
           || this.isUnverifiedBookingConfirmation(reply, userMessage, history, upcomingBooking) && !rescheduleAppliedThisTurn) {
           throw new Error('Verifier correction claimed an unverified action.');
@@ -3374,6 +3401,9 @@ private async captureMpesaMessage(
     userMessage: string,
     history: { role: 'user' | 'assistant', content: string }[]
   ): boolean {
+    if (isOnlyEmojis(userMessage) && history.length > 0) {
+      return true;
+    }
     const normalized = userMessage.trim().toLowerCase().replace(/[^\p{L}\p{N}\s']/gu, ' ').replace(/\s+/g, ' ').trim();
     const isAcknowledgement = /^(?:ok|okay|thanks|thank you(?: so much)?|got it|sawa|alright|perfect|great|all good|noted|noted\s+thanks|noted\s+thank\s+you|asante|asante\s+sana|(?:i\s+(?:will|would|'ll)\s+)?appreciate(?:\s+(?:it|that))?|much\s+appreciated|appreciated)(?:\s+(?:thanks|thank you))?$/.test(normalized);
     if (!isAcknowledgement) return false;

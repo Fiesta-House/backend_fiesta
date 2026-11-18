@@ -23,7 +23,6 @@ export function isFamilyPhotoCountQuestion(userMessage: string): boolean {
  * - Makeup (coverage, lashes, extra makeup)
  * - Hair & Wigs (styling included, wig hire, wig styling only, bringing own hair)
  * - Outfits & Gowns (studio wardrobe selection, extra outfit fee, bringing own outfit, sharing gowns in chat)
- * - Partner & Family Styling follow-ups
  * - Power Suit details and pricing
  * - Follow-up acknowledgements after a team handoff (avoids repeating canned fallbacks)
  */
@@ -86,22 +85,11 @@ export function resolveVerifiedFact(
     return `Extra outfits beyond your package are Ksh 4,000 each. For bringing your own outfit or swapping one with the studio wardrobe, the studio team will confirm details with you.${nextGuide}`;
   }
 
-  // 7. Partner / Husband Outfits follow-up: "do you have outfits for both me and my partner"
-  const partnerOutfitTerms = /\b(?:outfits?\s+(?:for\s+both|for\s+my\s+partner|for\s+my\s+husband)|do\s+you\s+have\s+outfits\s+for\s+(?:my\s+)?(?:partner|husband))\b/i;
-  if (partnerOutfitTerms.test(text)) {
-    return 'Our studio wardrobe is primarily tailored for the expecting mother. Your partner and children are very welcome to join the session, and the studio team will confirm styling recommendations for them.';
-  }
-
   // 8. Power Suit: "what is the power suit", "what does the power suit look like", "how much is the power suit"
   if (/\bpower\s*suit\b/i.test(text)
     && /\b(?:what|tell\s+me|about|describe|explain|details?|looks?\s+like|vibe|style|feel|how\s+much|price|cost)\b/i.test(text)
     && !/\b(?:add|added|save|saved|want|book)\b/i.test(text)) {
     return POWER_SUIT_REPLY;
-  }
-
-  // 9. Preparation: wording from the studio FAQ rows "What should I bring to the session?" and "What do I need to bring?"
-  if (/\b(?:what|anything)\b[^?]{0,40}\b(?:should|do|must|need\s+to|have\s+to)\s+(?:i\s+)?(?:bring|carry|wear)\b|\bwhat\s+to\s+(?:bring|carry|wear)\b/i.test(text)) {
-    return 'Just bring yourself and any personal items you would like to include, such as baby ultrasound photos, baby shoes and accessories like earrings. Please wear a black bra and panties. We will handle the rest, including outfits, props and styling.';
   }
 
   // 10. Discount and returning-client inquiries (pending studio owner confirmation)

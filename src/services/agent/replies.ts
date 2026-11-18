@@ -180,7 +180,7 @@ export function buildMixedIntentClarificationReply(): string {
 }
 
 export function buildBusinessIntroductionReply(): string {
-  return 'Welcome to Fiesta House Maternity. What kind of session are you planning?';
+  return 'Welcome to Fiesta House Maternity. How can I help you today?';
 }
 
 export function buildAboutBusinessReply(): string {
@@ -189,7 +189,7 @@ export function buildAboutBusinessReply(): string {
     'We photograph expecting mothers in our studio, and every edition includes professional makeup and styled outfits from our wardrobe.',
     'You can choose from seven editions, add optional extras, or ask us for a bespoke experience. We also help mothers travelling from outside Nairobi.',
     `You can see the editions here: ${OFFICIAL_WEBSITE_URLS.packages}`,
-    'What kind of session are you planning?',
+    'How can I help you today?',
   ].join('\n');
 }
 

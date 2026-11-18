@@ -176,6 +176,12 @@ export function stripAssistantEmojis<
   );
 }
 
+export function isOnlyEmojis(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  return stripEmojis(trimmed).trim().length === 0 && emojisIn(trimmed).length > 0;
+}
+
 export function emojiForbiddenReason(
   reply: string,
   context: EmojiContext,

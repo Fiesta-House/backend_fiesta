@@ -524,6 +524,16 @@ export async function createChatCompletion(
       : params.messages,
   };
 
+  // This internal option is never sent directly to a provider.
+  const requestedGroqReasoningEffort = ['low', 'medium', 'high'].includes(
+    sanitizedParams.groqReasoningEffort
+  )
+    ? sanitizedParams.groqReasoningEffort
+    : undefined;
+
+  const providerParams = { ...sanitizedParams };
+  delete providerParams.groqReasoningEffort;
+
   for (const provider of providers) {
     const client = clients[provider];
 
@@ -552,9 +562,20 @@ export async function createChatCompletion(
       completionCalls++;
 
       const requestParams = withGroqCompletionBudget(
-        sanitizedParams,
+        providerParams,
         provider
       );
+
+      // GPT-OSS supports reasoning_effort. Do not send it to other models/providers.
+      const reasoningEffortApplied =
+        (provider === 'groq' || provider === 'groq2') &&
+        /^openai\/gpt-oss(?:-|$)/i.test(model)
+          ? requestedGroqReasoningEffort
+          : undefined;
+
+      if (reasoningEffortApplied) {
+        requestParams.reasoning_effort = reasoningEffortApplied;
+      }
 
       console.info('[AI_PROVIDER] Request starting:', {
         provider,
@@ -569,24 +590,42 @@ export async function createChatCompletion(
           requestParams.max_completion_tokens ??
           requestParams.max_tokens ??
           null,
+        reasoningEffort: reasoningEffortApplied ?? null,
       });
 
-     const completionRequest =
-  client.chat.completions.create({
-    ...requestParams,
-    model,
-  } as any);
+      const completionRequest =
+        client.chat.completions.create({
+          ...requestParams,
+          model,
+        } as any);
 
-const {
-  data: response,
-  response: rawResponse,
-} = await completionRequest.withResponse();
+      const {
+        data: response,
+        response: rawResponse,
+      } = await completionRequest.withResponse();
 
-recordGroqRateLimits(
-  provider,
-  model,
-  rawResponse.headers,
-);
+      const firstChoice = response?.choices?.[0];
+      const completionDetails = response?.usage?.completion_tokens_details;
+
+      console.info('[AI_PROVIDER] Request completed:', {
+        provider,
+        model,
+        finishReason: firstChoice?.finish_reason ?? null,
+        completionTokens: response?.usage?.completion_tokens ?? null,
+        reasoningTokens: completionDetails?.reasoning_tokens ?? null,
+        hasTextContent:
+          typeof firstChoice?.message?.content === 'string' &&
+          firstChoice.message.content.trim().length > 0,
+        toolCallCount: Array.isArray(firstChoice?.message?.tool_calls)
+          ? firstChoice.message.tool_calls.length
+          : 0,
+      });
+
+      recordGroqRateLimits(
+        provider,
+        model,
+        rawResponse.headers,
+      );
 
       await recordModelUsage(
         provider,

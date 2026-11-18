@@ -403,7 +403,7 @@ export class InstagramController {
           createdAt: { lt: pendingInbound[0].createdAt },
         },
         orderBy: { createdAt: 'desc' },
-        take: 10,
+        take: 16,
       });
 
       const history = recentMessages.reverse().map(m => ({
@@ -411,6 +411,7 @@ export class InstagramController {
           | 'user'
           | 'assistant',
         content: m.content,
+        createdAt: m.createdAt,
       }));
 
       const aiReply = await agentService.handleMessage(
