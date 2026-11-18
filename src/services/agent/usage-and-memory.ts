@@ -84,8 +84,10 @@ export async function escalate(
       alertMessage,
       { customerId, escalationType, sentimentScore }
     );
+    return true;
   } catch (err) {
     console.error('Failed to create escalation:', err);
+    return false;
   }
 }
 

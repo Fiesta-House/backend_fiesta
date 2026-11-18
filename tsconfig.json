@@ -17,5 +17,5 @@
     }
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "prisma.config.ts"]
+  "exclude": ["node_modules", "prisma.config.ts", "verifier-escalation-backup-20261118-175112"]
 }

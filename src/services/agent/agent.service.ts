@@ -3840,11 +3840,14 @@ private async captureMpesaMessage(
    * Creates an escalation row so a human knows to follow up. Best-effort -
    * a failure here must never break the actual customer-facing reply.
    */
-  private async escalate(customerId: string, escalationType: string, description: string, sentimentScore?: number): Promise<void> {
-    if (this.activeTurnContext && this.activeTurnContext.customerId === customerId) {
+  private async escalate(customerId: string, escalationType: string, description: string, sentimentScore?: number): Promise<boolean> {
+    const recorded = await createEscalation(customerId, escalationType, description, sentimentScore);
+
+    if (recorded && this.activeTurnContext && this.activeTurnContext.customerId === customerId) {
       this.activeTurnContext.escalatedThisTurn = true;
     }
-    return createEscalation(customerId, escalationType, description, sentimentScore);
+
+    return recorded;
   }
 
   /**
