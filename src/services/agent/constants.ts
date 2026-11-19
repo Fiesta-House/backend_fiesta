@@ -17,6 +17,7 @@ export const PACKAGE_PRICING_FALLBACK = 'The Editions are THE BLOOM: Ksh 15,000,
 export const PAYMENT_CONFIRMATION_REQUIRED_REPLY = 'Before I share the payment details, please reply yes to confirm the booking.';
 export const PAYMENT_PROMPT_UNRECORDED = 'PAYMENT_PROMPT_UNRECORDED';
 export const PAYMENT_ALREADY_PENDING = 'PAYMENT_ALREADY_PENDING';
+export const BOOKING_SLOT_UNAVAILABLE = 'BOOKING_SLOT_UNAVAILABLE';
 export const PAYMENT_ATTEMPTS_EXHAUSTED = 'PAYMENT_ATTEMPTS_EXHAUSTED';
 export const RESCHEDULE_COLLECTING_STEP = 'reschedule_collecting';
 export const RESCHEDULE_CONTEXT_TTL_MS = 24 * 60 * 60 * 1000;

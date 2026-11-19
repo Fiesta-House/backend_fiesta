@@ -20,7 +20,7 @@ import { whatsappService } from '../messaging/whatsapp.service';
 import { invoiceService } from '../invoice/invoice.service';
 import { differingInclusionFields, SEED_EDITION_INCLUSIONS } from '../../config/edition-inclusions';
 import { addonInquiryReply, addonQuantity, addonSelectionClarification, isExplicitSelfMakeupAnswer, selectedAddons } from './addon-capture';
-import { ADDON_MAKEUP_CLARIFICATION } from './constants';
+import { ADDON_MAKEUP_CLARIFICATION, BOOKING_SLOT_UNAVAILABLE } from './constants';
 import { catalogLinkFollowUp } from './catalog-policy';
 import { wasUpcomingAppointmentDetailsJustProvided, isPastAppointmentFollowUp } from './appointment-replies';
 import { buildAdditionsReply, isAddonListFollowUp, formatCustomerTime } from './replies';
@@ -474,6 +474,91 @@ test('lets do it then confirms an existing visible proposal, or repeats it witho
   assert.equal(instance.isPaymentConfirmation('lets do it then but wait'), false);
 });
 
+test('unavailable proposed slot is released and does not repeat stale confirmation on yes', async (context) => {
+  const originals = {
+    find: prisma.bookingDraft.findUnique,
+    updateMany: prisma.bookingDraft.updateMany,
+  };
+  context.after(() => {
+    prisma.bookingDraft.findUnique = originals.find;
+    prisma.bookingDraft.updateMany = originals.updateMany;
+  });
+
+  const draft: any = {
+    id: 'synthetic-stale-slot',
+    customerId: 'synthetic-stale-slot',
+    version: 3,
+    step: 'awaiting_confirmation',
+    service: 'THE QUEEN',
+    date: '2026-11-19',
+    time: '13:30',
+    dateTimeIso: '2026-11-19T13:30:00+03:00',
+    name: 'Joan',
+  };
+
+  (prisma.bookingDraft.findUnique as any) = async () => draft;
+  let releaseCalls = 0;
+  (prisma.bookingDraft.updateMany as any) = async ({ where, data }: any) => {
+    releaseCalls++;
+    assert.equal(where.id, draft.id);
+    assert.equal(where.step, 'awaiting_confirmation');
+    assert.equal(where.version, 3);
+    assert.equal(where.service, 'THE QUEEN');
+    assert.equal(where.date, '2026-11-19');
+    assert.equal(where.time, '13:30');
+    Object.assign(draft, data);
+    return { count: 1 };
+  };
+
+  let confirmationCalls = 0;
+  const instance = withQuietAgent({
+    executeConfirmBookingTool: async () => {
+      confirmationCalls++;
+      throw Object.assign(
+        new Error('The proposed time 13:30 on 2026-11-19 is no longer available.'),
+        { code: BOOKING_SLOT_UNAVAILABLE }
+      );
+    },
+  });
+
+  const history = [{
+    role: 'assistant' as const,
+    content: buildBookingProposalConfirmation('THE QUEEN', '2026-11-19', '13:30', 2000),
+  }];
+
+  const reply = await instance.handleMessage(
+    'synthetic-stale-slot',
+    'yes',
+    history,
+    'whatsapp'
+  );
+
+  assert.match(reply, /time is no longer available/i);
+  assert.match(reply, /What time would work for you instead\?/i);
+  assert.equal(draft.step, EARLY_SLOT_STEP);
+  assert.equal(draft.service, 'THE QUEEN');
+  assert.equal(draft.date, '2026-11-19');
+  assert.equal(draft.name, 'Joan');
+  assert.equal(draft.time, null);
+  assert.equal(draft.dateTimeIso, null);
+  assert.equal(draft.version, 4);
+  assert.equal(releaseCalls, 1);
+  assert.equal(confirmationCalls, 1);
+  assert.doesNotMatch(reply, /Buy Goods Till|payment instructions|pay the deposit/i);
+
+  const repeated = await instance.handleMessage(
+    'synthetic-stale-slot',
+    'yes',
+    [{ role: 'assistant' as const, content: reply }],
+    'whatsapp'
+  );
+
+  assert.equal(confirmationCalls, 1, 'a second yes must not retry the stale proposal');
+  assert.doesNotMatch(repeated, /still ready for Thursday, 19 November 2026 at 1:30 PM/i);
+  assert.doesNotMatch(repeated, /Buy Goods Till|pay the deposit/i);
+  assert.equal(draft.step, EARLY_SLOT_STEP);
+  assert.equal(draft.time, null);
+});
 test('failed STK retry retains Icon date time and returns a proposal instead of restarting', async (context) => {
   const originals = { draft: prisma.bookingDraft.findUnique, update: prisma.bookingDraft.update, get: bookingDraftService.get, slots: bookingService.getAvailableSlots, pkg: prisma.package.findUnique, stk: mpesaService.initiateStkPush, payment: prisma.payment.upsert };
   context.after(() => {

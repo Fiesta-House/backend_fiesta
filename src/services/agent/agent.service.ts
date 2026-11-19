@@ -19,6 +19,7 @@ import {
   PACKAGE_PRICING_FALLBACK,
   PAYMENT_CONFIRMATION_REQUIRED_REPLY,
   PAYMENT_ALREADY_PENDING,
+  BOOKING_SLOT_UNAVAILABLE,
   PAYMENT_ATTEMPTS_EXHAUSTED,
   RESCHEDULE_COLLECTING_STEP,
   RESCHEDULE_CONTEXT_TTL_MS,
@@ -3721,6 +3722,79 @@ private async captureMpesaMessage(
       // Confirmation of the proposal is recorded, but payment is still outstanding.
       return `To complete your booking for ${result.service} on ${result.date} at ${result.time}, please pay the deposit of Ksh ${result.depositAmount.toLocaleString()} via Lipa na M-Pesa: Buy Goods Till Number ${result.till} (${result.tillName}). Once paid, please paste or forward the M-Pesa confirmation message or transaction code here. The team will verify your payment and confirm your session.`;
     } catch (error: any) {
+      if (error?.code === BOOKING_SLOT_UNAVAILABLE) {
+        const sameProposal = (candidate: any) =>
+          candidate?.id === draft.id &&
+          candidate?.step === 'awaiting_confirmation' &&
+          candidate?.service === draft.service &&
+          candidate?.date === draft.date &&
+          candidate?.time === draft.time;
+
+        let currentDraft = await prisma.bookingDraft.findUnique({
+          where: { customerId },
+        });
+
+        // Retry once if a concurrent update changed only the draft version.
+        for (let attempt = 0; attempt < 2; attempt++) {
+          if (!sameProposal(currentDraft) || !Number.isInteger(currentDraft.version)) {
+            break;
+          }
+
+          const released = await prisma.bookingDraft.updateMany({
+            where: {
+              id: currentDraft.id,
+              step: 'awaiting_confirmation',
+              version: currentDraft.version,
+              service: draft.service,
+              date: draft.date,
+              time: draft.time,
+            },
+            data: {
+              step: EARLY_SLOT_STEP,
+              time: null,
+              dateTimeIso: null,
+              version: currentDraft.version + 1,
+            },
+          });
+
+          if (released.count === 1) {
+            const edition = editionInText(draft.service || 'session');
+            const dateLabel = businessDay(draft.date).format('dddd, D MMMM');
+            return `That time is no longer available for your ${edition} on ${dateLabel}. What time would work for you instead?`;
+          }
+
+          currentDraft = await prisma.bookingDraft.findUnique({
+            where: { customerId },
+          });
+        }
+
+        // A concurrent request may already have advanced the booking.
+        if (currentDraft?.step === 'awaiting_payment_message') {
+          const pkg = await this.getPackageForDeposit(
+            currentDraft.service || undefined
+          );
+          const deposit = this.getDepositForPackage(pkg);
+
+          return `To complete your booking for ${currentDraft.service} on ${currentDraft.date} at ${currentDraft.time}, please pay the deposit of Ksh ${deposit.toLocaleString()} via Lipa na M-Pesa: Buy Goods Till Number ${TILL_NUMBER} (${TILL_NAME}). Once paid, please paste or forward the M-Pesa confirmation message or transaction code here. The team will verify your payment and confirm your session.`;
+        }
+
+        if (currentDraft?.step === 'payment_pending') {
+          return this.getPaymentRecoveryReply(
+            customerId,
+            userMessage,
+            'status_check'
+          );
+        }
+
+        // Never repeat the stale proposal if its guarded release did not succeed.
+        if (sameProposal(currentDraft)) {
+          return 'That time is no longer available. What time would work for you instead?';
+        }
+
+        return (await this.getBookingStatusReply(customerId)) ||
+          'That time is no longer available. What time would work for you instead?';
+      }
+
       if (error?.code !== PAYMENT_ALREADY_PENDING) {
         throw error;
       }
