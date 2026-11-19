@@ -3736,9 +3736,13 @@ private async captureMpesaMessage(
 
         // Retry once if a concurrent update changed only the draft version.
         for (let attempt = 0; attempt < 2; attempt++) {
-          if (!sameProposal(currentDraft) || !Number.isInteger(currentDraft.version)) {
-            break;
-          }
+         if (
+  !currentDraft ||
+  !sameProposal(currentDraft) ||
+  !Number.isInteger(currentDraft.version)
+) {
+  break;
+}
 
           const released = await prisma.bookingDraft.updateMany({
             where: {
