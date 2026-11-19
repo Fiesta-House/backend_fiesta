@@ -11,7 +11,7 @@ import { notifyAdmin } from '../notifications/notification.service';
 import { businessDay, bookingDateFacts, inBusinessTimezone } from '../../utils/time';
 import { getBookingPolicyWindow } from '../../utils/booking-policy';
 import dayjs from 'dayjs';
-import { RESCHEDULE_COLLECTING_STEP } from './constants';
+import { BOOKING_SLOT_UNAVAILABLE, RESCHEDULE_COLLECTING_STEP } from './constants';
 import { isUsableName, sanitizeSlotValue } from './slot-memory';
 import {
   getPackageForDeposit,
@@ -220,12 +220,15 @@ export async function executeConfirmBookingTool(
     : [];
 
   if (!availableSlots.includes(draft.time)) {
-    throw new Error(
-      'The proposed time ' +
-        draft.time +
-        ' on ' +
-        draft.date +
-        ' is no longer available. Do not share payment details; ask the customer to choose another time.'
+    throw Object.assign(
+      new Error(
+        'The proposed time ' +
+          draft.time +
+          ' on ' +
+          draft.date +
+          ' is no longer available. Do not share payment details; ask the customer to choose another time.'
+      ),
+      { code: BOOKING_SLOT_UNAVAILABLE }
     );
   }
 
