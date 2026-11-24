@@ -6,27 +6,12 @@ import { stripAssistantEmojis } from './emoji-policy';
 import { RESCHEDULE_FORFEITURE_WINDOW_HOURS } from '../../utils/booking-policy';
 export { isBookingProcessRequest } from './booking-process-reply';
 
-export const FAMILY_STYLING_TEAM_REPLY = 'Your partner and children are welcome. The team will confirm what styling is available for them.';
 
 export function buildBookingPolicyReply(): string {
   const hours = RESCHEDULE_FORFEITURE_WINDOW_HOURS;
   return `Rescheduling: Changes within ${hours} hours before your session forfeit the deposit. At exactly ${hours} hours, the current rule does not forfeit it.\n\nCancellation: Refund eligibility applies only when cancelling more than ${hours} hours before the session. At ${hours} hours or less, the deposit is not eligible for a refund. A new booking requires a new deposit.\n\nNo booking change or cancellation has been made.`;
 }
 
-export function familyStylingReply(message: string, history: { role: 'user' | 'assistant'; content: string }[] = []): string | null {
-  history = stripAssistantEmojis(history);
-  const family = /\b(?:family|partners?|husbands?|wives|wife|children|kids|sons?|daughters?|fathers?|dads?|brothers?|sisters?)\b/i;
-  const styling = /\b(?:dress(?:ing|ed|es)?|groom(?:ing|ed)?|styl(?:ing|e|ed)|outfits?|clothes|clothing|attire|accessories|hair|make[ -]?up)\b/i;
-  const extraMakeup = ADDON_CATALOG.find(item => item.sku === 'extra_makeup');
-  const needsConfirmation = message.split(/[.!?;]|\band\b/i).some(clause => {
-    const recipient = family.test(clause) || /\b(?:they|them|him|her|their|his|everyone|everybody)\b/i.test(clause)
-      && history.slice(-4).some(entry => family.test(entry.content));
-    const catalogSelection = extraMakeup && clause.match(extraMakeup.match)
-      && !/\?/.test(message) && /\b(?:want|add|include|noted)\b/i.test(clause);
-    return recipient && styling.test(clause) && !catalogSelection;
-  });
-  return needsConfirmation ? FAMILY_STYLING_TEAM_REPLY : null;
-}
 
 export function buildAdditionsReply(deposit: number | null): string {
   const displayDeposit = typeof deposit === 'number' && Number.isInteger(deposit) && deposit >= MINIMUM_BOOKING_DEPOSIT ? deposit : null;
@@ -86,7 +71,7 @@ export function formatCustomerTime(time: string): string {
 }
 
 export function buildBookingProposalConfirmation(service: string, date: string, time: string, deposit: number): string {
-  return `Your details for ${editionInText(service)} are ready for ${businessDay(date).format('dddd, D MMMM YYYY')} at ${formatCustomerTime(time)}. The deposit is Ksh ${deposit.toLocaleString()}. Reply yes to confirm your booking details and receive payment instructions. Your booking is confirmed once the deposit is received.`;
+  return `Your details for ${editionInText(service)} are ready for ${businessDay(date).format('dddd, D MMMM YYYY')} at ${formatCustomerTime(time)}. The deposit is Ksh ${deposit.toLocaleString()}. Reply yes to confirm your booking details and receive payment instructions.`;
 }
 
 export function buildRescheduleProposalConfirmation(service: string, date: string, time: string): string {
@@ -180,7 +165,7 @@ export function buildMixedIntentClarificationReply(): string {
 }
 
 export function buildBusinessIntroductionReply(): string {
-  return 'Welcome to Fiesta House Maternity. How can I help you today?';
+  return 'Welcome to Fiesta House Maternity. What kind of session are you planning?';
 }
 
 export function buildAboutBusinessReply(): string {
@@ -331,17 +316,6 @@ export function isMultiPersonBookingRequest(userMessage: string): boolean {
   return mentionsAnotherPerson && bookingContext && jointSessionSignal;
 }
 
-export function buildMultiPersonBookingReply(): string {
-  return [
-    'Great question, and yes, we can plan that.',
-    'Do you want:',
-    '1) one joint session together, or',
-    '2) separate bookings for each of you?',
-    '',
-    "I've noted that another person may join.",
-    "Once you confirm option 1 or 2, share your package, date, and preferred time and I'll check availability."
-  ].join('\n');
-}
 
 export function isBookingForSomeoneElseRequest(userMessage: string): boolean {
   const text = userMessage.toLowerCase();

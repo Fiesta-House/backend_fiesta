@@ -23,9 +23,9 @@ import { addonInquiryReply, addonQuantity, addonSelectionClarification, isExplic
 import { ADDON_MAKEUP_CLARIFICATION, BOOKING_SLOT_UNAVAILABLE } from './constants';
 import { catalogLinkFollowUp } from './catalog-policy';
 import { wasUpcomingAppointmentDetailsJustProvided, isPastAppointmentFollowUp } from './appointment-replies';
-import { buildAdditionsReply, isAddonListFollowUp, formatCustomerTime } from './replies';
+import { buildAdditionsReply, isAddonListFollowUp, formatCustomerTime, isMultiPersonBookingRequest } from './replies';
 import { shouldUseBookingStatusReply, getBookingStatusReply, isConfirmedSessionFollowUp } from './appointment-replies';
-import { FAMILY_STYLING_TEAM_REPLY, familyStylingReply, buildPackageBudgetReply, legacyPackageReply, LASHES_FAQ_REPLY } from './replies';
+import { buildPackageBudgetReply, legacyPackageReply, LASHES_FAQ_REPLY } from './replies';
 import { ADDON_CATALOG } from '../../config/constants';
 import { DAILY_TOKEN_CAP } from './resilience.service';
 import { BUDGET_HANDOFF_REPLY } from './constants';
@@ -356,25 +356,40 @@ test('link-first verifier permits single-edition inclusions and explicit last-re
   assert.ok(verifyModelReply('Extra outfit - Ksh 4,000\nExtra makeup - Ksh 3,500\nStyled wig hire - Ksh 4,000', { ...facts, amounts: [4000, 3500] }).reasons.includes('catalog_dump'));
 });
 
-test('family styling questions are deterministic team-confirm topics, not invented services', async () => {
-  const instance = withQuietAgent({ runAgent: async () => assert.fail('family styling must not reach the model') });
-  for (const question of ['Do you dress family members?', 'Do you groom my husband?', 'Do partners get outfits and accessories?', 'Can you do makeup for my children?', 'Do you dress my husband for the session?']) {
-    assert.equal(await instance.handleMessage('synthetic-family', question, [], 'whatsapp'), FAMILY_STYLING_TEAM_REPLY);
-  }
-  assert.equal(familyStylingReply('Can you style them?', [{ role: 'user', content: 'My partner and children are joining.' }]), FAMILY_STYLING_TEAM_REPLY);
-  const familySession = [
-    { role: 'user' as const, content: 'i would like a family session' },
-    { role: 'assistant' as const, content: "Your partner and children are very welcome to join your maternity session. We'll guide poses that include everyone." },
+test('joint-session and family-styling questions are answered conversationally by the model', async () => {
+  const modelReplies = [
+    'Your partner is welcome to join the maternity session.',
+    'The studio wardrobe and styling are for the expectant mother. Your partner should bring their own outfit.',
   ];
-  assert.equal(familyStylingReply('tell me about styling...are they styled too?', familySession), FAMILY_STYLING_TEAM_REPLY);
-  assert.equal(await instance.handleMessage('synthetic-family', 'tell me about styling...are they styled too?', familySession, 'whatsapp'), FAMILY_STYLING_TEAM_REPLY);
-  assert.equal(familyStylingReply('are they welcome on Saturday?', familySession), null);
-  assert.equal(familyStylingReply('What makeup is included in Icon?'), null);
-  const facts = { amounts: [], deposits: [], editions: [] };
-  for (const text of ['Family members can bring their own outfits.', 'We can arrange partner styling as an optional add-on.', 'Outfits and accessories for partners are included.']) {
-    assert.ok(verifyModelReply(text, facts).reasons.includes('unverified_family_styling'));
-  }
-  assert.deepEqual(verifyModelReply(FAMILY_STYLING_TEAM_REPLY, facts).reasons, []);
+  let modelCalls = 0;
+  const instance = withQuietAgent({
+    runAgent: async () => ({
+      content: modelReplies[modelCalls++],
+      tokensUsed: 0,
+    }),
+  });
+
+  const firstReply = await instance.handleMessage(
+    'synthetic-family',
+    'Can my partner join the maternity shoot?',
+    [],
+    'whatsapp',
+  );
+  assert.equal(firstReply, modelReplies[0]);
+
+  const familySession = [
+    { role: 'user' as const, content: 'Can my partner join the maternity shoot?' },
+    { role: 'assistant' as const, content: firstReply },
+  ];
+  const followUpReply = await instance.handleMessage(
+    'synthetic-family',
+    'Will they get studio outfits and styling too?',
+    familySession,
+    'whatsapp',
+  );
+
+  assert.equal(followUpReply, modelReplies[1]);
+  assert.equal(modelCalls, 2);
 });
 
 test('family edited-photo count questions use a deterministic answer without assuming package policy', async (context) => {
@@ -1276,7 +1291,7 @@ test('verifier permits attributed quotes and checked totals without blessing inv
   assert.ok(verifyModelReply('The deposit is 4500.', facts).reasons.includes('deposit_mismatch'));
   assert.deepEqual(verifyModelReply('Saturday 10 October 2026. Tuesday 6 October 2026.', facts).reasons, []);
   assert.ok(verifyModelReply('Saturday 10 October 2026. Monday 6 October 2026.', facts).reasons.includes('weekday_mismatch'));
-  assert.ok(verifyModelReply('We dress your husband in custom outfits.', facts).reasons.includes('unverified_family_styling'));
+
 });
 
 for (const [name, text, reason] of [
@@ -3446,9 +3461,9 @@ test('book, pay and with/join keywords only match whole words', () => {
   assert.notEqual(agent.inferIntent('I will repay you later').intent, 'payment');
   assert.equal(agent.inferIntent('I have paid').intent, 'payment');
   assert.equal(agent.inferIntent('can I pay now').intent, 'payment');
-  assert.equal(agent.shouldUseMultiPersonBookingReply('my sister is coming without me to the shoot'), false);
-  assert.equal(agent.shouldUseMultiPersonBookingReply('Can my sister join the shoot with me?'), true);
-  assert.equal(agent.shouldUseMultiPersonBookingReply('my husband is joining the session'), true);
+  assert.equal(isMultiPersonBookingRequest('my sister is coming without me to the shoot'), false);
+  assert.equal(isMultiPersonBookingRequest('Can my sister join the shoot with me?'), true);
+  assert.equal(isMultiPersonBookingRequest('my husband is joining the session'), true);
 });
 
 // Follow-up #6: no silent 'standard' fallback for deposits

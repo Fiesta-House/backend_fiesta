@@ -1,6 +1,7 @@
 
 import prisma from '../../config/prisma';
 import { bookingService } from '../booking/booking.service';
+import { bookingStateService } from '../booking/booking-state.service';
 import { googleCalendarService } from '../calendar/calendar.service';
 import { invoiceService } from '../invoice/invoice.service';
 import { notifyAdmin } from '../notifications/notification.service';
@@ -124,6 +125,24 @@ export async function completeTillBooking(
     : [];
 
   if (!availableSlots.includes(draft.time)) {
+    await prisma.payment.upsert({
+      where: { bookingDraftId: draft.id },
+      update: {
+        mpesaReceipt: parsed.code,
+        amount: parsed.amount ?? depositAmount,
+        status: 'pending',
+      },
+      create: {
+        bookingDraftId: draft.id,
+        amount: parsed.amount ?? depositAmount,
+        phone: customer.phone || customer.whatsappId || 'Not provided',
+        status: 'pending',
+        mpesaReceipt: parsed.code,
+      },
+    }).catch((err) => {
+      console.error('[TILL_BOOKING] Failed to record conflict receipt:', err);
+    });
+
     await notifyAdmin(
       'booking',
       'Paid booking requires availability review',
@@ -237,6 +256,18 @@ export async function completeTillBooking(
     calendarFailed = true;
     console.error(
       '[TILL_BOOKING] Calendar creation failed:',
+      error
+    );
+  }
+
+  try {
+    await bookingStateService.attachAllPendingToBooking(
+      customerId,
+      result.booking.id
+    );
+  } catch (error) {
+    console.error(
+      '[TILL_BOOKING] Failed to attach pending add-ons or notes:',
       error
     );
   }

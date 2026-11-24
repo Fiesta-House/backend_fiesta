@@ -16,9 +16,10 @@ import { addonInquiryReply, addonRecipient, addonSelectionClarification, isAddon
 import { ADDON_NOTED_PREFIX, ADDON_BALANCE_REPLY, ADDON_UNCHANGED_REPLY } from './constants';
 import { isCustomerNameQuestion, needsUnchangedReassurance, editionInText } from './reply-voice';
 import { isMissingColumnError } from '../../config/schema-readiness';
-import { DEFERRAL_REPLY, buildBookingPolicyReply, buildHairWigClarificationReply, buildOpeningHoursReply, buildPersonalOutfitReply, buildWalkInReply, familyStylingReply, isHairWigClarificationRequest, isStandaloneLashesQuestion, isPersonalOutfitQuestion, legacyPackageReply, buildAboutBusinessReply } from './replies';
+import { DEFERRAL_REPLY, buildBookingPolicyReply, buildHairWigClarificationReply, buildOpeningHoursReply, buildPersonalOutfitReply, buildWalkInReply, isHairWigClarificationRequest, isStandaloneLashesQuestion, isPersonalOutfitQuestion, legacyPackageReply, buildAboutBusinessReply } from './replies';
 import { alternativeDates, extractStatedSlots, EARLY_SLOT_STEP } from './slot-memory';
 import { CARRY_OVER_PREFIX, STEP_QUESTIONS, alternativeDatesReply } from './booking-progress';
+import { bookingStateService } from '../booking/booking-state.service';
 
 const CARRY_OVER_CONTINUE = /^(?:yes+|yeah|yep|sure|ok(?:ay)?|continue|same|that one|yes,? (?:please|continue|let'?s continue)|let'?s continue|please continue|continue with (?:that|it))[.! ]*$/i;
 const CARRY_OVER_CHANGE = /^(?:no|nope|no,? (?:a |something )?different(?: one)?|(?:a |something )?different(?: one)?|another one|change it|choose (?:a )?different(?: one)?)[.! ]*$/i;
@@ -44,6 +45,7 @@ export type MessageRouteResult = string | { reply: string; outcome?: RouteOutcom
 export type MessageRoute = {
   name: string;
   when: () => boolean;
+  mutateState?: () => Promise<void>;
   handle: () => MessageRouteResult | Promise<MessageRouteResult>;
   replyMode?: 'deterministic' | 'natural';
   beforeSlotCapture?: boolean;
@@ -115,12 +117,7 @@ export function createMessageRoutes(
   };
 
   return [
-    {
-      name: 'familyStyling',
-      replyMode: 'natural',
-      when: () => Boolean(familyStylingReply(userMessage, history)),
-      handle: () => familyStylingReply(userMessage, history),
-    },
+
     {
       name: 'scopeBoundary',
       when: () => Boolean(scopeBoundaryReply = this.getScopeBoundaryReply(userMessage, history)),
@@ -135,8 +132,10 @@ export function createMessageRoutes(
           return await this.getCustomerNameReply(customerId);
         } catch (error) {
           if (isMissingColumnError(error)) throw error;
-          return { reply: 'I could not check your saved name just now. The studio team can help.',
-            outcome: { success: false, isFallback: true, failureReason: 'customer_name_lookup_failed' } };
+          return {
+            reply: 'I could not check your saved name just now. The studio team can help.',
+            outcome: { success: false, isFallback: true, failureReason: 'customer_name_lookup_failed' }
+          };
         }
       },
     },
@@ -299,14 +298,16 @@ export function createMessageRoutes(
         if (CARRY_OVER_CONTINUE.test(userMessage.trim())) {
           return await this.getBookingProgressReply(customerId, userMessage, history, false, true) || STEP_QUESTIONS.need_package;
         }
-        await prisma.bookingDraft.updateMany({ where: { customerId, step: EARLY_SLOT_STEP },
-          data: { service: null, date: null, time: null, dateTimeIso: null } });
+        await prisma.bookingDraft.updateMany({
+          where: { customerId, step: EARLY_SLOT_STEP },
+          data: { service: null, date: null, time: null, dateTimeIso: null }
+        });
         return `No problem. ${STEP_QUESTIONS.need_package}`;
       },
     },
     {
       name: 'postActionAcknowledgement',
-      replyMode: 'natural',
+      replyMode: 'deterministic',
       when: () => this.isPostActionAcknowledgement(userMessage, history),
       handle: () => {
         const lastAssistant = [...history].reverse().find(m => m.role === 'assistant')?.content || '';
@@ -326,7 +327,7 @@ export function createMessageRoutes(
     },
     {
       name: 'deferral',
-      replyMode: 'natural',
+      replyMode: 'deterministic',
       when: () => isDeferral(userMessage) && !Object.keys(extractStatedSlots(userMessage, history)).length,
       handle: () => DEFERRAL_REPLY,
     },
@@ -432,17 +433,7 @@ export function createMessageRoutes(
       when: () => this.shouldClarifyBookingForSomeoneElse(userMessage),
       handle: () => this.getBookingForSomeoneElseReply(userMessage),
     },
-    {
-      name: 'multiPersonBooking',
-      replyMode: 'natural',
-      when: () => this.shouldUseMultiPersonBookingReply(userMessage),
-      handle: async () => {
-        await this.captureMultiPersonBookingNote(customerId, userMessage).catch((err: unknown) => {
-          console.error('Failed to capture multi-person booking note:', err);
-        });
-        return this.getMultiPersonBookingReply();
-      },
-    },
+
     {
       name: 'lashes',
       replyMode: 'natural',
@@ -482,7 +473,7 @@ export function createMessageRoutes(
     },
     {
       name: 'businessIntroduction',
-      replyMode: 'natural',
+      replyMode: 'deterministic',
       when: () => getInformationalFlow() === 'business_introduction',
       handle: () => this.getBusinessIntroductionReply(userMessage),
     },
@@ -536,18 +527,20 @@ export function createMessageRoutes(
           return await this.getPreviousAddonReply(customerId);
         } catch (error) {
           if (isMissingColumnError(error)) throw error;
-          return { reply: 'I could not check your saved add-ons just now. The studio team can help verify them.',
-            outcome: { success: false, isFallback: true, failureReason: 'addon_status_lookup_failed' } };
+          return {
+            reply: 'I could not check your saved add-ons just now. The studio team can help verify them.',
+            outcome: { success: false, isFallback: true, failureReason: 'addon_status_lookup_failed' }
+          };
         }
       },
     },
-    
-{
-  name: 'addonAdvice',
-  replyMode: 'natural',
-  when: () => isAddonAdviceRequest(userMessage, history),
-  handle: () => buildAddonAdviceReply(),
-},
+
+    {
+      name: 'addonAdvice',
+      replyMode: 'natural',
+      when: () => isAddonAdviceRequest(userMessage, history),
+      handle: () => buildAddonAdviceReply(),
+    },
 
 
 
@@ -606,11 +599,11 @@ export function createMessageRoutes(
       name: 'selectedAddon',
       replyMode: 'natural',
       when: () => Boolean(addonSelectionClarification(userMessage, history) || this.getSelectedAddon(userMessage, history)),
-      handle: async () => {
+      mutateState: async () => {
         const clarification = addonSelectionClarification(userMessage, history);
-        if (clarification) return clarification;
+        if (clarification) return;
         const choices = this.getSelectedAddons(userMessage, history);
-        if (!choices.length) return null;
+        if (!choices.length) return;
         const saved: string[] = [];
         const existing: string[] = [];
         const failed: string[] = [];
@@ -631,6 +624,23 @@ export function createMessageRoutes(
             failed.push(addon.name);
           }
         }
+        if (saved.length || existing.length || included.length) {
+          await bookingStateService.markAddonsDecided(customerId);
+        }
+        (this as any).__lastAddonMutation = { choices, saved, existing, failed, included, edition };
+      },
+      handle: async () => {
+        const clarification = addonSelectionClarification(userMessage, history);
+        if (clarification) return clarification;
+        let state = (this as any).__lastAddonMutation;
+        if (!state) {
+          const route = (this as any)._currentSelectedAddonMutate;
+          if (route) await route();
+          state = (this as any).__lastAddonMutation;
+        }
+        (this as any).__lastAddonMutation = undefined;
+        if (!state) return null;
+        const { choices, saved, existing, failed, included, edition } = state;
         const includedLine = included.length
           ? `${included.join(' and ')} ${included.length > 1 ? 'are' : 'is'} already included with ${editionInText(edition)}, so there is no extra charge.` : '';
         if (included.length && !saved.length && !existing.length && !failed.length) return includedLine;
@@ -640,10 +650,10 @@ export function createMessageRoutes(
           return next ? `${acknowledgement}\n${next}` : acknowledgement;
         }
         const acknowledgement = [saved.length ? `${ADDON_NOTED_PREFIX} ${saved.join('; ')}.` : '',
-          existing.length ? `Already recorded: ${existing.join('; ')}. I have not added these twice.` : '',
-          failed.length ? `Not saved: ${failed.join('; ')}. The team can help confirm these.` : '',
+        existing.length ? `Already recorded: ${existing.join('; ')}. I have not added these twice.` : '',
+        failed.length ? `Not saved: ${failed.join('; ')}. The team can help confirm these.` : '',
           includedLine,
-          `${ADDON_BALANCE_REPLY}${needsUnchangedReassurance(userMessage) ? ` ${ADDON_UNCHANGED_REPLY}` : ''}`].filter(Boolean).join('\n');
+        `${ADDON_BALANCE_REPLY}${needsUnchangedReassurance(userMessage) ? ` ${ADDON_UNCHANGED_REPLY}` : ''}`].filter(Boolean).join('\n');
         const next = !failed.length && (saved.length || existing.length) ? await this.getBookingProgressReply(customerId, userMessage, history, true) : null;
         return next ? `${acknowledgement}\n${next}` : acknowledgement;
       },
@@ -726,24 +736,24 @@ export function createMessageRoutes(
       handle: async () => this.getPackageAdviceReply(userMessage),
     },
     {
-  name: 'packageCatalog',
-  replyMode: 'natural',
- when: () => !/\b(?:what happens|what['?]?s next|what next|next steps?|what do i do|how (?:does|do) (?:it|the (?:booking|process)(?: process)?) work|after (?:i|choosing|selecting|booking|paying))\b/i.test(userMessage)
-   && (this.conversationFlows.isPackageCatalogRequest(userMessage, history) || catalogLinkFollowUp(userMessage, history)),
-  handle: async () => {
-    const previous = [...history].reverse().find(entry => entry.role === 'assistant')?.content || '';
-    const kind = catalogLinkFollowUp(userMessage, history) && /extras|add-ons/i.test(previous) ? 'addons' : 'editions';
-    return this.getCatalogDisplayReply(customerId, platform, kind, userMessage, history);
-  },
-},
-{
-  name: 'aboutBusiness',
-  replyMode: 'natural',
-  when: () =>
-    /\b(?:about your services|what services do you offer|what does fiesta house do|tell me about fiesta house)\b/i
-      .test(userMessage),
-  handle: () => buildAboutBusinessReply(),
-},
+      name: 'packageCatalog',
+      replyMode: 'natural',
+      when: () => !/\b(?:what happens|what['?]?s next|what next|next steps?|what do i do|how (?:does|do) (?:it|the (?:booking|process)(?: process)?) work|after (?:i|choosing|selecting|booking|paying))\b/i.test(userMessage)
+        && (this.conversationFlows.isPackageCatalogRequest(userMessage, history) || catalogLinkFollowUp(userMessage, history)),
+      handle: async () => {
+        const previous = [...history].reverse().find(entry => entry.role === 'assistant')?.content || '';
+        const kind = catalogLinkFollowUp(userMessage, history) && /extras|add-ons/i.test(previous) ? 'addons' : 'editions';
+        return this.getCatalogDisplayReply(customerId, platform, kind, userMessage, history);
+      },
+    },
+    {
+      name: 'aboutBusiness',
+      replyMode: 'natural',
+      when: () =>
+        /\b(?:about your services|what services do you offer|what does fiesta house do|tell me about fiesta house)\b/i
+          .test(userMessage),
+      handle: () => buildAboutBusinessReply(),
+    },
     {
       name: 'immediateConfirmation',
       when: () => (platform === 'whatsapp' || platform === 'web')
@@ -846,8 +856,8 @@ export function createMessageRoutes(
           const fallbackReply = pendingExtrasDecline
             ? 'Noted, no optional extras. Our booking assistant is temporarily unavailable, so I have not sent a deposit proposal. A team member will follow up to finish your booking.'
             : isOutage
-            ? PROVIDER_OUTAGE_MESSAGE
-            : 'Sorry, I could not process that request right now. Please try again, or a team member will follow up with you.';
+              ? PROVIDER_OUTAGE_MESSAGE
+              : 'Sorry, I could not process that request right now. Please try again, or a team member will follow up with you.';
           if (rateLimitType === 'daily_tpd_exhausted' && shouldNotifyOutage()) {
             await this.escalate(customerId, 'error', `AI PROVIDER OUTAGE: Groq's daily token limit has been reached - ALL customers are currently getting the fallback message, not just this one. It resets on its own; check console.groq.com/settings/billing if this keeps recurring. Original error: ${error.message}`);
           } else if (rateLimitType === 'transient_rate_limit' && shouldNotifyOutage()) {

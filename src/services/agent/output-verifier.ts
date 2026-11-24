@@ -102,8 +102,8 @@ function checkedTotal(sentence: string, facts: VerifierFacts): { amounts: number
     const unitPrice = addon?.unitPrice ?? pkg?.price
       ?? (
         numericUnit.length === 1
-        && facts.amounts.includes(numericUnit[0])
-        && /^(?:kshs?|kes|shs)\.?\s*\d[\d,.]*$/i.test(label)
+          && facts.amounts.includes(numericUnit[0])
+          && /^(?:kshs?|kes|shs)\.?\s*\d[\d,.]*$/i.test(label)
           ? numericUnit[0]
           : undefined
       );
@@ -135,7 +135,7 @@ function isAddonRecommendationRequest(customerMessage = ''): boolean {
 function claimsAutomatedStkPayment(text: string): boolean {
   const statements = text.split(/[.!?;\n]+/);
   const stkMention = /\b(?:stk\b|payment\s+prompt|m[\s\u00a0\u2010-\u2015-]?pesa\b[^.!?\n]{0,60}\b(?:push|prompt)\b)/i;
-  const negativeContext = /\b(?:no|not|never|dont|don'?t|do\s+not|doesnt|doesn'?t|does\s+not|didnt|didn'?t|did\s+not|wont|won'?t|will\s+not|wouldnt|wouldn'?t|would\s+not|cannot|cant|can'?t|isnt|isn'?t|is\s+not|arent|aren'?t|are\s+not|no\s+longer|old|outdated|previous|historical)\b[^.!?\n]{0,45}\b(?:stk\b|payment\s+prompt|m[\s\u00a0\u2010-\u2015-]?pesa\b[^.!?\n]{0,35}\b(?:push|prompt)\b)|\b(?:stk\b|payment\s+prompt|m[\s\u00a0\u2010-\u2015-]?pesa\b[^.!?\n]{0,35}\b(?:push|prompt)\b)[^.!?\n]{0,45}\b(?:not|never|no\s+longer|outdated)\b/i;
+  const negativeContext = /\b(?:no|not|never|dont|don'?t|do\s+not|doesnt|doesn'?t|does\s+not|didnt|didn'?t|did\s+not|wont|won'?t|will\s+not|wouldnt|wouldn'?t|would\s+not|cannot|cant|can'?t|isnt|isn'?t|is\s+not|arent|aren'?t|are\s+not|no\s+longer|old|outdated|previous|historical|while)\b[^.!?\n]{0,45}\b(?:stk\b|payment\s+prompt|m[\s\u00a0\u2010-\u2015-]?pesa\b[^.!?\n]{0,35}\b(?:push|prompt)\b)|\b(?:stk\b|payment\s+prompt|m[\s\u00a0\u2010-\u2015-]?pesa\b[^.!?\n]{0,35}\b(?:push|prompt)\b)[^.!?\n]{0,45}\b(?:not|never|no\s+longer|outdated|is\s+open)\b/i;
 
   return statements.some(statement =>
     stkMention.test(statement) && !negativeContext.test(statement)
@@ -179,11 +179,12 @@ export function verifyModelReply(
     currencyAmounts(validationReply).length >= 2 ||
     /^\s*[-*•]\s+/m.test(reply) ||
     /\b(?:kshs?|kes|shs)\b/i.test(reply) ||
-    /\b(?:edition|package):\s+/i.test(reply)
+    /\b(?:edition|package|session):\s+/i.test(reply) ||
+    (reply.match(/,/g) || []).length >= 2
   );
 
   if (!facts.catalogListAllowed && (
-    (editionCount >= 3 && hasCatalogListingFormat)
+    editionCount >= 3
     || (addonCount >= 3 && !specificEditionAnswer && hasCatalogListingFormat)
   )) {
     reasons.add('catalog_dump');

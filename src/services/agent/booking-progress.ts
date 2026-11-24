@@ -1,6 +1,7 @@
 import prisma from '../../config/prisma';
 import { ADDON_CATALOG, PACKAGE_NAMES_FOR_EXTRACTION, SERVICE_DURATIONS } from '../../config/constants';
 import { bookingService } from '../booking/booking.service';
+import { bookingStateService } from '../booking/booking-state.service';
 import { bookingDateFacts, formatCustomerDate, nowInBusinessTimezone } from '../../utils/time';
 import { EARLY_SLOT_STEP, alternativeDates, carriedOverStale, closedDateReply, earlySlotsExpired, extractStatedSlots, isUsableName } from './slot-memory';
 import { buildBookingProposalConfirmation, formatCustomerTime } from './replies';
@@ -68,31 +69,13 @@ export function unavailableTimeReply(date: string, time: string, slots: string[]
   return `${formatCustomerTime(time)} is not available on ${formatCustomerDate(date)}. The nearest open ${nearest.length > 1 ? 'times are' : 'time is'} ${joinTimes(nearest)}. Which would suit you?`;
 }
 
-const decisionMarker = (draftId: string) => `system:addons-decided:v1:${draftId}`;
-
 /** Bound to the draft id, so the decision survives the six-message history window but not a new draft. */
 export async function recordAddonDecision(customerId: string, draftId: string): Promise<void> {
-  try {
-    const marker = decisionMarker(draftId);
-    await prisma.customerMemory.upsert({ where: { customerId }, update: {}, create: { customerId } });
-    await prisma.customerMemory.updateMany({ where: { customerId, NOT: { keyInsights: { has: marker } } }, data: { keyInsights: { push: marker } } });
-  } catch {
-    console.warn('[AGENT_FLOW] addon_decision_state=unsaved');
-  }
+  return bookingStateService.markAddonsDecided(customerId, draftId);
 }
 
 async function addonsDecided(this: any, customerId: string, draft: { id: string; createdAt: Date }, history: Message[]): Promise<boolean> {
-  if (history.some((entry, index) => entry.role === 'user' && this.isDecliningOptionalAddons(entry.content, history.slice(0, index)))) return true;
-  try {
-    const memory = await prisma.customerMemory.findUnique({ where: { customerId }, select: { keyInsights: true } });
-    if (memory?.keyInsights?.includes(decisionMarker(draft.id))) return true;
-  } catch {
-    console.warn('[AGENT_FLOW] addon_decision_state=unavailable');
-  }
-  const note = await prisma.customerSessionNote.findFirst({
-    where: { customerId, bookingId: null, category: 'addon', status: 'pending', createdAt: { gte: draft.createdAt } }, select: { id: true },
-  });
-  return Boolean(note);
+  return bookingStateService.hasAddonsDecided(customerId, draft, history, (msg, hist) => this.isDecliningOptionalAddons(msg, hist));
 }
 
 export function welcomePrefix(message: string, history: Message[]): string {
