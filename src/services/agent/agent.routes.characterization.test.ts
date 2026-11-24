@@ -36,7 +36,6 @@ const SYNC_HANDLERS: Record<string, string> = {
   getAmbiguousDepositReply: 'ambiguousDeposit',
   getMixedIntentClarificationReply: 'mixedIntent',
   getBookingForSomeoneElseReply: 'bookingForSomeoneElse',
-  getMultiPersonBookingReply: 'multiPersonBooking',
   getPackageBudgetReply: 'packageBudget',
   getLegacyPackageReply: 'legacyPackageName',
   getBusinessIntroductionReply: 'businessIntroduction',
@@ -76,7 +75,6 @@ function createHarness(options: HarnessOptions = {}) {
     recordTokenUsage: async () => {},
     executeAddNoteTool: async () => ({ created: true, type: 'special_request' }),
     getAddonSelectionReply: () => 'ROUTE:selectedAddon',
-    captureMultiPersonBookingNote: async () => {},
     withdrawPendingReschedule: async () => {},
     captureRecipientName: async () => (nullRoutes.has('recipientName') ? null : 'Jane Wanjiku'),
     proposeCancellation: async () => ({ reply: reply('cancellationProposal'), proposed: !nullRoutes.has('cancellationProposal') }),
@@ -163,7 +161,7 @@ const NATURAL_GATED_ROUTES = new Set([
 const CASES: Case[] = [
   // Guards
   { message: 'Tell me a joke', expected: 'scopeBoundary' },
-  { message: 'Can my husband join the session?', expected: 'scopeBoundary', note: 'studio policy wins over multiPersonBooking' },
+  { message: 'Can my husband join the session?', expected: 'runAgent', note: 'joint-session questions are answered conversationally by the model' },
   { message: 'Do you do evening sessions?', expected: 'scopeBoundary' },
   { message: "you're mixing up the sessions", expected: 'identityCorrection' },
   { message: 'Jane Wanjiku', history: [assistant('Is the session just for your sister, or would you both like to be photographed together?')], expected: 'recipientName' },
@@ -201,7 +199,7 @@ const CASES: Case[] = [
   { message: 'Just for her', expected: 'runAgent', note: 'relative-booking answer requires the clarification context' },
   { message: 'Jane Wanjiku', history: [assistant('Is the session just for your sister, or would you both like to be photographed together?'), assistant('Got it. The session will be just for your sister. What is her full name?')], expected: 'recipientName' },
   { message: 'I want to book a session for my sister', expected: 'bookingForSomeoneElse' },
-  { message: 'Can my sister join the shoot with me?', expected: 'multiPersonBooking' },
+  { message: 'Can my sister join the shoot with me?', expected: 'runAgent' },
 
   // Packages / budget / payment resend
   { message: "What's your cheapest package?", expected: 'packageBudget' },
@@ -332,7 +330,6 @@ test('message route order remains unchanged', () => {
   );
 
   assert.deepEqual(routes.map((route: { name: string }) => route.name), [
-    'familyStyling',
     'scopeBoundary',
     'customerName',
     'bookingPolicyInformation',
@@ -364,7 +361,6 @@ test('message route order remains unchanged', () => {
     'pastAppointment',
     'bookingForSomeoneElseFollowUp',
     'bookingForSomeoneElse',
-    'multiPersonBooking',
     'lashes',
     'legacyPackageName',
     'packageBudget',

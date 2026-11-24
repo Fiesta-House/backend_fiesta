@@ -13,6 +13,9 @@ import { getBookingPolicyWindow } from '../../utils/booking-policy';
 import dayjs from 'dayjs';
 import { BOOKING_SLOT_UNAVAILABLE, RESCHEDULE_COLLECTING_STEP } from './constants';
 import { isUsableName, sanitizeSlotValue } from './slot-memory';
+import { isRescheduleWithin72Hours } from './flows/reschedule-flow';
+import { notifyRescheduleAdmin } from './helpers/resilience-handlers';
+import { isCancellationProposalExpired } from './flows/cancellation-flow';
 import {
   getPackageForDeposit,
   getDepositForPackage,
@@ -435,7 +438,12 @@ export async function executeConfirmRescheduleTool(
       })
       .then((updated) => {
         if (!updated) {
-          void this.notifyRescheduleAdmin({
+          const notifyFn = (params: any) => (
+            this?.notifyRescheduleAdmin
+              ? this.notifyRescheduleAdmin(params)
+              : notifyRescheduleAdmin(params)
+          );
+          void notifyFn({
             customerId,
             event: 'failed',
             service: upcomingBooking.service,
@@ -481,8 +489,10 @@ export async function executeConfirmRescheduleTool(
     newDateTime,
     oldDateTime: upcomingBooking.dateTime,
     service: upcomingBooking.service,
-    depositForfeited: this.isRescheduleWithin72Hours(
-      upcomingBooking.dateTime
+    depositForfeited: (
+      this?.isRescheduleWithin72Hours
+        ? this.isRescheduleWithin72Hours(upcomingBooking.dateTime)
+        : isRescheduleWithin72Hours(upcomingBooking.dateTime)
     ),
   };
 }
@@ -513,7 +523,13 @@ export async function executeConfirmCancellationTool(
     );
   }
 
-  if (this.isCancellationProposalExpired(draft)) {
+  const isExpired = (
+    this?.isCancellationProposalExpired
+      ? this.isCancellationProposalExpired(draft)
+      : isCancellationProposalExpired(draft)
+  );
+
+  if (isExpired) {
     await prisma.bookingDraft.deleteMany({
       where: { customerId, step: 'cancel_confirm' },
     });
@@ -523,7 +539,16 @@ export async function executeConfirmCancellationTool(
     );
   }
 
-  return this.executeCancelBookingTool(
+  if (this?.executeCancelBookingTool) {
+    return this.executeCancelBookingTool(
+      customerId,
+      draft.date,
+      draft.bookingId
+    );
+  }
+
+  return executeCancelBookingTool.call(
+    this,
     customerId,
     draft.date,
     draft.bookingId

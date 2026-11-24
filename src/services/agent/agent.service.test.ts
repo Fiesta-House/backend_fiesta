@@ -21,7 +21,6 @@ import {
   buildBookingForSomeoneElseReply,
   buildBusinessIntroductionReply,
   buildContactDetailsReply,
-  buildMultiPersonBookingReply,
   buildPackageBudgetReply,
   buildPortfolioReply,
   buildPostShootProcessReply,
@@ -61,14 +60,26 @@ test('falls back to Gemini on a Groq quota error and keeps later tool rounds on 
   const originalCreate = prisma.aiModelUsage.create;
   (prisma.aiModelUsage.create as any) = async ({ data }: any) => { saved.push(data); };
   const clients = {
-    groq: { chat: { completions: { create: async () => {
-      calls.push('groq');
-      throw Object.assign(new Error('tokens per day'), { status: 429 });
-    } } } },
-    gemini: { chat: { completions: { create: async (params: any) => {
-      calls.push(params.model);
-      return { choices: [{ message: { content: 'Ready' } }], usage: { prompt_tokens: 30, completion_tokens: 12, total_tokens: 42 } };
-    } } } },
+    groq: {
+      chat: {
+        completions: {
+          create: async () => {
+            calls.push('groq');
+            throw Object.assign(new Error('tokens per day'), { status: 429 });
+          }
+        }
+      }
+    },
+    gemini: {
+      chat: {
+        completions: {
+          create: async (params: any) => {
+            calls.push(params.model);
+            return { choices: [{ message: { content: 'Ready' } }], usage: { prompt_tokens: 30, completion_tokens: 12, total_tokens: 42 } };
+          }
+        }
+      }
+    },
   } as any;
   const params = { model: 'openai/gpt-oss-20b', messages: [{ role: 'user', content: 'Book my session' }] };
   try {
@@ -96,14 +107,26 @@ test('uses the secondary Groq key before Gemini and keeps later rounds on that p
   (prisma.aiModelUsage.create as any) = async ({ data }: any) => { saved.push(data); };
   const response = { choices: [{ message: { content: 'Ready' } }], usage: { total_tokens: 7 } };
   const clients = {
-    groq: { chat: { completions: { create: async () => {
-      calls.push('groq');
-      throw Object.assign(new Error('primary key rate limited'), { status: 429 });
-    } } } },
-    groq2: { chat: { completions: { create: async (params: any) => {
-      calls.push(`groq2:${params.model}`);
-      return response;
-    } } } },
+    groq: {
+      chat: {
+        completions: {
+          create: async () => {
+            calls.push('groq');
+            throw Object.assign(new Error('primary key rate limited'), { status: 429 });
+          }
+        }
+      }
+    },
+    groq2: {
+      chat: {
+        completions: {
+          create: async (params: any) => {
+            calls.push(`groq2:${params.model}`);
+            return response;
+          }
+        }
+      }
+    },
     gemini: { chat: { completions: { create: async () => { calls.push('gemini'); return response; } } } },
   } as any;
   try {
@@ -132,13 +155,19 @@ test('skips Groq during its Retry-After cooldown and retries it after expiry', a
   (prisma.aiModelUsage.create as any) = async () => ({});
   const response = { choices: [{ message: { content: 'Ready' } }] };
   const clients = {
-    groq: { chat: { completions: { create: async () => {
-      groqCalls++;
-      if (groqCalls === 1) {
-        throw Object.assign(new Error('tokens per day'), { status: 429, headers: new Headers({ 'retry-after': '120' }) });
+    groq: {
+      chat: {
+        completions: {
+          create: async () => {
+            groqCalls++;
+            if (groqCalls === 1) {
+              throw Object.assign(new Error('tokens per day'), { status: 429, headers: new Headers({ 'retry-after': '120' }) });
+            }
+            return response;
+          }
+        }
       }
-      return response;
-    } } } },
+    },
     gemini: { chat: { completions: { create: async () => { geminiCalls++; return response; } } } },
   } as any;
   const params = { model: 'openai/gpt-oss-20b', messages: [{ role: 'user', content: 'Hello' }] };
@@ -164,13 +193,25 @@ test('routes around invalid primary Groq credentials to Gemini', async () => {
   const originalCreate = prisma.aiModelUsage.create;
   (prisma.aiModelUsage.create as any) = async () => ({});
   const clients = {
-    groq: { chat: { completions: { create: async () => {
-      throw Object.assign(new Error('unauthorized'), { status: 401 });
-    } } } },
-    gemini: { chat: { completions: { create: async () => {
-      fallbackCalled = true;
-      return { choices: [{ message: { content: 'Ready' } }] };
-    } } } },
+    groq: {
+      chat: {
+        completions: {
+          create: async () => {
+            throw Object.assign(new Error('unauthorized'), { status: 401 });
+          }
+        }
+      }
+    },
+    gemini: {
+      chat: {
+        completions: {
+          create: async () => {
+            fallbackCalled = true;
+            return { choices: [{ message: { content: 'Ready' } }] };
+          }
+        }
+      }
+    },
   } as any;
   try {
     const result = await createChatCompletion({ model: 'primary', messages: [] }, 'groq', clients);
@@ -186,15 +227,25 @@ test('falls through all providers when each account exhausts its quota', async (
   const originalCreate = prisma.aiModelUsage.create;
   (prisma.aiModelUsage.create as any) = async () => ({});
   const clients = Object.fromEntries(['groq', 'groq2', 'gemini'].map((provider) => [provider, {
-    chat: { completions: { create: async () => {
-      calls.push(provider);
-      throw Object.assign(new Error('quota exhausted'), { status: 429 });
-    } } },
+    chat: {
+      completions: {
+        create: async () => {
+          calls.push(provider);
+          throw Object.assign(new Error('quota exhausted'), { status: 429 });
+        }
+      }
+    },
   }])) as any;
-  clients.gemini2 = { chat: { completions: { create: async () => {
-    calls.push('gemini2');
-    return { choices: [{ message: { content: 'Ready' } }] };
-  } } } };
+  clients.gemini2 = {
+    chat: {
+      completions: {
+        create: async () => {
+          calls.push('gemini2');
+          return { choices: [{ message: { content: 'Ready' } }] };
+        }
+      }
+    }
+  };
   try {
     const result = await createChatCompletion({ model: 'primary', messages: [] }, 'groq', clients);
     assert.equal(result.provider, 'gemini2');
@@ -415,13 +466,13 @@ test('hands off a declined-extras booking when the provider daily limit is exhau
   };
   const escalations: string[] = [];
   agent.checkTokenBudget = async () => true;
-  agent.trackSentiment = async () => {};
+  agent.trackSentiment = async () => { };
   agent.getBookingProgressReply = async () => null;
   agent.runAgent = async () => {
     throw Object.assign(new Error('tokens per day (TPD) limit reached'), { status: 429, code: 'rate_limit_exceeded' });
   };
-  agent.logAiJobMetric = async () => {};
-  agent.logConversationLearning = async () => {};
+  agent.logAiJobMetric = async () => { };
+  agent.logConversationLearning = async () => { };
   agent.escalate = async (_customerId: string, _type: string, description: string) => { escalations.push(description); };
 
   try {
@@ -609,7 +660,8 @@ test('date-range availability is bounded and skips Mondays and fully booked days
   };
   (prisma.bookingDraft.findMany as any) = async ({ where }: any) => {
     counts.drafts++;
-    assert.deepEqual(where.step.in, ['awaiting_confirmation', 'payment_pending']);
+    const stepIn = where.step?.in ?? where.OR?.[0]?.step?.in;
+    assert.deepEqual(stepIn, ['awaiting_confirmation', 'payment_pending']);
     return [];
   };
   (googleCalendarService.getEvents as any) = async (from: Date, to: Date) => {
@@ -674,10 +726,15 @@ test('availability excludes occupied appointments and competing booking drafts',
   let drafts: any[] = [];
   (prisma.booking.findMany as any) = async () => bookings;
   (prisma.bookingDraft.findMany as any) = async ({ where }: any) => {
-    assert.deepEqual(where.step.in, ['awaiting_confirmation', 'payment_pending']);
+    const stepIn = where.step?.in ?? where.OR?.[0]?.step?.in;
+    assert.deepEqual(stepIn, ['awaiting_confirmation', 'payment_pending']);
+    const fifteenMinutesGte = where.updatedAt?.gte ?? where.OR?.[0]?.updatedAt?.gte;
+    const twoHoursGte = where.OR?.[1]?.updatedAt?.gte;
     return drafts.filter((draft) => draft.id !== where.id?.not
-      && where.step.in.includes(draft.step)
-      && draft.updatedAt >= where.updatedAt.gte
+      && (
+        (stepIn.includes(draft.step) && (!fifteenMinutesGte || draft.updatedAt >= fifteenMinutesGte))
+        || (draft.step === 'awaiting_payment_message' && (!twoHoursGte || draft.updatedAt >= twoHoursGte))
+      )
       && draft.dateTimeIso !== null);
   };
   (googleCalendarService.getEvents as any) = async () => [];
@@ -944,8 +1001,8 @@ test('returns reschedule confirmation without waiting for Google Calendar', { ti
     draftCleared = true;
     return { count: 1 };
   };
-  (googleCalendarService.updateEvent as any) = () => new Promise(() => {});
-  agent.notifyRescheduleAdmin = () => new Promise(() => {});
+  (googleCalendarService.updateEvent as any) = () => new Promise(() => { });
+  agent.notifyRescheduleAdmin = () => new Promise(() => { });
 
   try {
     const reply = await agent.tryImmediateConfirmation('customer-123', 'yes', [{
@@ -998,15 +1055,15 @@ test('treats polite thanks as an acknowledgement, not booking confirmation', () 
 });
 
 test('distinguishes booking for a relative from a joint session', () => {
-  assert.equal(agent.shouldClarifyBookingForSomeoneElse('I want to book a session for my sister'), true);
-  assert.equal(agent.shouldUseMultiPersonBookingReply('I want to book a session for my sister'), false);
-  assert.equal(agent.shouldClarifyBookingForSomeoneElse('I want to book a session with my sister'), false);
-  assert.equal(agent.shouldUseMultiPersonBookingReply('I want to book a session with my sister'), true);
+  assert.equal(isBookingForSomeoneElseRequest('I want to book a session for my sister'), true);
+  assert.equal(isMultiPersonBookingRequest('I want to book a session for my sister'), false);
+  assert.equal(isBookingForSomeoneElseRequest('I want to book a session with my sister'), false);
+  assert.equal(isMultiPersonBookingRequest('I want to book a session with my sister'), true);
 });
 
 test('handles studio policies without relying on the AI provider', () => {
   assert.match(agent.getStudioPolicyReply('Do you have late night sessions?') || '', /9 AM to 7 PM/i);
-  assert.match(agent.getStudioPolicyReply('Can my partner join the maternity shoot?') || '', /welcome/i);
+  assert.equal(agent.getStudioPolicyReply('Can my partner join the maternity shoot?'), null);
   assert.match(agent.getStudioPolicyReply('Can I do a semi-nude maternity session?') || '', /professionalism and privacy/i);
 });
 
@@ -1014,7 +1071,6 @@ test('keeps partner fee follow-ups in conversational context instead of forcing 
   const question = 'Does my husband have to pay extra?';
   assert.equal(agent.getScopeBoundaryReply(question), null);
   assert.equal(agent.shouldClarifyMixedIntent(question), false);
-  assert.equal(agent.shouldUseMultiPersonBookingReply(question), false);
 });
 
 test('keeps reproductive-health questions outside the studio assistant scope', () => {
@@ -1094,7 +1150,7 @@ test('does not guess what an ambiguous 10k deposit means', async () => {
   const originalPackageFindUnique = prisma.package.findUnique;
   (prisma.package.findUnique as any) = async () => ({ name: 'THE BLOOM', deposit: 2000 });
   try {
-  assert.equal(agent.shouldClarifyAmbiguousDeposit('she wants the one with the 10 sh deposit in it'), true);
+    assert.equal(agent.shouldClarifyAmbiguousDeposit('she wants the one with the 10 sh deposit in it'), true);
     assert.match(await agent.getAmbiguousDepositReply(), /Do you mean a Ksh 10,000 deposit|add-on/i);
   } finally {
     prisma.package.findUnique = originalPackageFindUnique;
@@ -1195,7 +1251,6 @@ test('static reply builders remain paired with their request matchers', async ()
       { message: "What's your instagram?", matches: isSocialMediaRequest, reply: buildSocialMediaReply() },
       { message: 'How to book a session?', matches: isBookingProcessRequest, reply: bookingProcessReply },
       { message: 'I want to book a session for my sister', matches: isBookingForSomeoneElseRequest, reply: buildBookingForSomeoneElseReply() },
-      { message: 'Can my sister join the shoot with me?', matches: isMultiPersonBookingRequest, reply: buildMultiPersonBookingReply() },
     ];
 
     for (const pair of pairs) {
@@ -1527,7 +1582,7 @@ test('refreshes an existing invoice with newly selected priced add-ons', async (
     addonsTotal: 3500,
     lineItems: [{ name: 'Extra professional makeup', quantity: 1, unitPrice: 3500, totalPrice: 3500 }],
   });
-  (bookingAddonService.markInvoiced as any) = async () => {};
+  (bookingAddonService.markInvoiced as any) = async () => { };
   (invoiceService.generatePdf as any) = async (data: any) => {
     pdfInput = data;
     return Buffer.from('refreshed-pdf');
@@ -1810,7 +1865,7 @@ test('six inclusion references agree with the actual seed and local FAQ facts', 
     const answer = faq.find((entry) => entry.id === `pkg_${name.replace(/^THE /, '').toLowerCase()}`)?.answer || '';
     assert.ok(answer.includes(`${reference.duration} studio time`), `${name}: FAQ duration`);
     assert.ok(answer.includes(`${reference.images} final edited photos`), `${name}: FAQ photos`);
-    assert.ok(answer.includes(`${reference.outfits} studio outfits + styling`), `${name}: FAQ outfits`);
+    assert.ok(new RegExp(`${reference.outfits} studio outfits(?: for the expectant mother)? \\+ styling`).test(answer), `${name}: FAQ outfits`);
     for (const item of reference.inclusions) {
       if (/styled wigs?$|fine art mount$|Power Suit|Reel/.test(item)) assert.ok(answer.includes(item.replace(/^5 studio outfits with styling, including the /, '')), `${name}: ${item}`);
     }
@@ -1820,8 +1875,10 @@ test('six inclusion references agree with the actual seed and local FAQ facts', 
 });
 
 test('edition names cannot create unrecorded inclusions in cards', () => {
-  const row = { price: 35000, duration: '2.5 hours', images: 15, makeup: false, outfits: 0, styling: false,
-    photobook: false, photobookSize: null, mount: false, balloonBackdrop: false, wig: false, notes: null };
+  const row = {
+    price: 35000, duration: '2.5 hours', images: 15, makeup: false, outfits: 0, styling: false,
+    photobook: false, photobookSize: null, mount: false, balloonBackdrop: false, wig: false, notes: null
+  };
   for (const name of ['THE ICON', 'THE EMPRESS', 'THE GODDESS']) {
     const card = agent.buildPackageCard({ ...row, name });
     assert.doesNotMatch(card, /wig|Power Suit|Reel|A2|A3|flowers|Sculpture|Signature|Flagship/);

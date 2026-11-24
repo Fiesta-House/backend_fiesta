@@ -42,11 +42,13 @@ export function selectedAddons(message: string, history: Message[] = []): AddonC
   }
   const clauses = choiceClauses(text);
   const choosing = clauses.some((clause) => /\b(?:want|would like|add|include|choose|go with|take|prefer|just|instead|another|one more|additional|second)\b/.test(clause));
+  const replyingToAddonPrompt = /^(?:yes+|yeah+|yep+|yup|sure|okay|ok)\b/i.test(text.trim())
+    || /\b(?:add-?ons?|extras?|optional)\b/i.test(lastAssistant);
   const allowShort = /\b(?:just|instead|another|one more|additional|second)\b/.test(text)
     || /\b\d+\s+(?:outfits?|wigs?)\b/.test(text)
     || ADDON_CATALOG.some((item) => item.match.test(text));
   const matches = Array.from(new Map(clauses.flatMap((clause) => mentionedAddons(clause, allowShort)).map((item) => [item.sku, item])).values());
-  if (choosing && matches.length) return matches;
+  if ((choosing || (replyingToAddonPrompt && !declined(text))) && matches.length) return matches;
   if (clauses.length === 0 || declined(text)) return [];
   const discussed = ADDON_CATALOG.filter((item) => item.match.test(lastAssistant));
   const hasCalendarSignal = Boolean(resolveCalendarDate(text)) || /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|today|tomorrow|weekend|dates?|times?|\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b/i.test(text);

@@ -92,6 +92,11 @@ export function resolveVerifiedFact(
     return POWER_SUIT_REPLY;
   }
 
+  // 9. Preparation: wording from the studio FAQ rows "What should I bring to the session?" and "What do I need to bring?"
+  if (/\b(?:what|anything)\b[^?]{0,40}\b(?:should|do|must|need\s+to|have\s+to)\s+(?:i\s+)?(?:bring|carry|wear)\b|\bwhat\s+to\s+(?:bring|carry|wear)\b/i.test(text)) {
+    return 'Just bring yourself and any personal items you would like to include, such as baby ultrasound photos, baby shoes and accessories like earrings. Please wear a black bra and panties. We will handle the rest, including outfits, props and styling.';
+  }
+
   // 10. Discount and returning-client inquiries (pending studio owner confirmation)
   const discountTerms = /\b(?:discounts?|special\s+rates?|loyalty\s+discounts?|returning\s+client\s+discounts?|repeat\s+client\s+discounts?)\b/i;
   const returningDiscountQuery = /\b(?:returning|repeat)\s+(?:client|customer)\b.*\b(?:discount|offer|rate|deal)\b/i.test(text)
