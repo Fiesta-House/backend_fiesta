@@ -4,7 +4,7 @@ import { bookingAddonService } from './booking-addon.service';
 export const addonDecisionMarker = (draftId: string): string =>
   `system:addons-decided:v1:${draftId}`;
 
-type HistoryMessage = { role: string; content: string };
+type HistoryMessage = { role: 'user' | 'assistant'; content: string };
 
 /**
  * Single source of truth for pending booking-draft state (add-on selections,

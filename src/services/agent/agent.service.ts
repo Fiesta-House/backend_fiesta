@@ -716,7 +716,7 @@ private getAddonAdviceReply(): string {
     return value.replace(/[\u2010-\u2015\u2212]/g, '-');
   }
 
-  private isDecliningOptionalAddons(
+  public isDecliningOptionalAddons(
     userMessage: string,
     history: { role: 'user' | 'assistant'; content: string }[]
   ): boolean {
