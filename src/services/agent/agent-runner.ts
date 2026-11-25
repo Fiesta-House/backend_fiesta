@@ -496,7 +496,7 @@ ${contextString}`;
             : '[B] Detailed tool-use workflows omitted for this informational turn.\n\n',
         );
 
-    if (!toolsEnabledForTurn && systemPrompt === fullSystemPrompt) {
+    if (!toolsEnabledForTurn && includeWorkflow && systemPrompt === fullSystemPrompt) {
       throw new Error('Could not omit the workflow section from the informational prompt.');
     }
 

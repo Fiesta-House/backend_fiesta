@@ -321,6 +321,34 @@ test('link-first specific edition and addon inquiry keep their facts and append 
   assert.match(inquiry, /session-packages/);
 });
 
+test('verifier fallback handles broad addon enquiries without replacing AI recommendations', async () => {
+  const instance = withQuietAgent({});
+
+  const broadReply = await instance.getVerifierTemplateReply(
+    'synthetic-addon-fallback',
+    'How about the add ons',
+    []
+  );
+  assert.equal(broadReply, ADDON_LINK_REPLY.split('\n')[0]);
+
+  assert.equal(
+    await instance.getVerifierTemplateReply(
+      'synthetic-addon-fallback',
+      'Which add-ons would you recommend?',
+      []
+    ),
+    null
+  );
+
+  assert.equal(
+    await instance.getVerifierTemplateReply(
+      'synthetic-addon-fallback',
+      'Tell me about studio lighting.',
+      []
+    ),
+    null
+  );
+});
 test('link-first shared copy, broken-link fallback and mid-booking question preserve selection', async (context) => {
   const policy = require('./catalog-policy');
   const originalClaim = policy.claimCatalogLink;
