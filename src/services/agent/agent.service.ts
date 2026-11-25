@@ -534,6 +534,10 @@ public async getVerifierTemplateReply(
 
   }
 
+  if (/\b(?:add-?ons?|optional extras?|extras?)\b/i.test(userMessage)) {
+    return this.getCatalogDisplayReply(customerId, 'whatsapp', 'addons', userMessage, history);
+  }
+
   if (this.conversationFlows.isPackageCatalogRequest(userMessage, history)) {
     return EDITION_LINK_REPLY;
   }
