@@ -109,7 +109,7 @@ export function isPackageBudgetRequest(userMessage: string): boolean {
 }
 
 export function buildPackageBudgetReply(): string {
-  return 'I can help with that. The most affordable option is usually THE BLOOM, while THE ICON is the most popular mid-range package. If you want to keep it simple, tell me which package you prefer: THE BLOOM, THE ICON, or a premium option like THE EMPRESS or THE GODDESS.';
+  return 'I can help with that. The most affordable option is THE AURA, while THE ICON is the most popular mid-range package. If you want to keep it simple, tell me which package you prefer: THE AURA, THE BLOOM, or THE ICON, or a premium option like THE EMPRESS or THE GODDESS.';
 }
 
 const LEGACY_PACKAGE_PATTERN = /\b(standard|economy|executive|gold|platinum|vvip|vip)\s+(?:package|edition|session|plan|option|tier)s?\b/i;
@@ -120,7 +120,7 @@ export function legacyPackageReply(message: string): string | null {
   if (!match || /\bmy\b/i.test(message)) return null;
   const word = match[1].toLowerCase();
   const name = word.length <= 4 ? word.toUpperCase() : `${word[0].toUpperCase()}${word.slice(1)}`;
-  return `We don't have a ${name} package. Our editions run from THE BLOOM to THE GODDESS, and THE BLOOM is the entry option. Would you like its details, or the full rate card?`;
+  return `We don't have a ${name} package. Our editions run from THE AURA to THE GODDESS, and THE AURA is the entry option. Would you like its details, or the full rate card?`;
 }
 
 export const LASHES_FAQ_REPLY = 'Yes. Lashes are included in all our makeup services, including every package. The extra professional makeup add-on also includes lashes.';
