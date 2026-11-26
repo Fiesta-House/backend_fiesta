@@ -72,6 +72,30 @@ export function validateStartupEnv(): void {
     errors.push('AUTH_JWT_SECRET must be at least 32 characters long');
   }
 
+  const chatSessionSecret = process.env.CHAT_SESSION_SECRET;
+  if (chatSessionSecret && chatSessionSecret.trim() && chatSessionSecret.trim().length < 32) {
+    errors.push('CHAT_SESSION_SECRET must be at least 32 characters long');
+  }
+
+  // M-Pesa callback hardening. Daraja does not sign callbacks, so production
+  // must carry a secret in the callback URL (see middleware/mpesa-callback-guard.ts).
+  const mpesaCallbackUrl = process.env.MPESA_CALLBACK_URL?.trim();
+  const mpesaCallbackSecret = process.env.MPESA_CALLBACK_SECRET?.trim();
+  const mpesaProduction =
+    String(process.env.MPESA_ENVIRONMENT || '').trim().toLowerCase() === 'production' ||
+    String(process.env.NODE_ENV || '').trim().toLowerCase() === 'production';
+  if (mpesaProduction) {
+    if (mpesaCallbackUrl && !isPlaceholder(mpesaCallbackUrl)) {
+      if (!mpesaCallbackSecret || mpesaCallbackSecret.length < 24) {
+        errors.push('MPESA_CALLBACK_SECRET (at least 24 characters) is required in production when MPESA_CALLBACK_URL is set');
+      } else if (!mpesaCallbackUrl.includes(`/callback/${mpesaCallbackSecret}`)) {
+        errors.push('MPESA_CALLBACK_URL must end with /api/mpesa/callback/<MPESA_CALLBACK_SECRET> in production');
+      }
+    } else if (!mpesaCallbackSecret) {
+      console.warn('[ENV] MPESA_CALLBACK_SECRET is not set: the M-Pesa callback endpoint will reject every request in production.');
+    }
+  }
+
   const pineconeKey = process.env.PINECONE_API_KEY;
   if (pineconeKey && isPlaceholder(pineconeKey)) {
     errors.push('PINECONE_API_KEY is using a placeholder value');

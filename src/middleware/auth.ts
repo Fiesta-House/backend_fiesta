@@ -59,7 +59,10 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): P
 export async function requireApiAuthentication(req: Request, res: Response, next: NextFunction): Promise<void> {
   const path = req.originalUrl.split('?')[0];
   const publicPaths = new Set([
+    // Web chat: /api/chat is gated by a signed chat-session token (see
+    // middleware/chat-session.ts) and rate limited, not by an admin JWT.
     '/api/chat',
+    '/api/chat/session',
     '/api/whatsapp',
     '/api/instagram',
     '/api/mpesa/callback',
@@ -67,7 +70,11 @@ export async function requireApiAuthentication(req: Request, res: Response, next
     '/api/integrations/instagram/callback',
   ]);
 
-  if (publicPaths.has(path)) {
+  // Daraja callbacks arrive at /api/mpesa/callback/<secret>; the route's own
+  // guard (middleware/mpesa-callback-guard.ts) checks the secret and source.
+  const isMpesaCallbackWithSecret = /^\/api\/mpesa\/callback\/[^/]+$/.test(path);
+
+  if (publicPaths.has(path) || isMpesaCallbackWithSecret) {
     next();
     return;
   }
