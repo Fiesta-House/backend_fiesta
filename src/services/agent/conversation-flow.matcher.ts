@@ -14,7 +14,7 @@ export type ConversationMessage = {
   content: string;
 };
 
-const EDITION_WORDS = 'bloom|muse|icon|legend|queen|empress|goddess';
+const EDITION_WORDS = PACKAGE_NAMES_FOR_EXTRACTION.map((name) => name.replace(/^THE\s+/i, '').replace(/[.*+?^$'{}()|[\]\\]/g, '\\$&')).join('|');
 const SELECTION_VERB = /\b(?:give\s+me|i\s+want|i\s+would\s+(?:like|want)|i['’]?d\s+like|i\s+(?:choose|pick|select)|i(?:['’]ll|\s+will)\s+(?:take|have|go\s+with|choose|pick)|let['’]?s\s+(?:go\s+with|do|book)|go\s+with|take|choose|pick|select|book|interested\s+in)\b/i;
 const BARE_EDITION = new RegExp(`^(?:(?:ok(?:ay)?|so|then|yes|please)[, ]+)?(?:the\\s+)?(?:${EDITION_WORDS})(?:\\s+(?:package|edition))?(?:[, ]+(?:please|pls|then))?[.! ]*$`, 'i');
 
@@ -130,14 +130,14 @@ export class ConversationFlowMatcher {
 
   isPackageAdviceRequest(message: string): boolean {
     const text = message.toLowerCase();
-    const namesPackage = /(bloom|muse|icon|legend|queen|empress|goddess|standard|economy|executive|gold|platinum|vvip|vip)\s+(package|edition)?/.test(text);
+    const namesPackage = /(aura|bloom|muse|icon|legend|queen|empress|goddess|standard|economy|executive|gold|platinum|vvip|vip)\s+(package|edition)?/i.test(text);
     const asksForAdvice = /(recommend|which\s+(one|package|edition)|best\s+(package|edition)|should\s+i\s+(get|choose)|why.*over|compare|difference\s+between)/.test(text);
     return namesPackage && asksForAdvice || /(recommend|which\s+one|best\s+(package|edition)|should\s+i\s+(get|choose))/.test(text);
   }
 
   isPackageSelection(message: string): boolean {
     if (selectedEdition(message)) return true;
-    return /(i\s+(like|want|choose|will take|would like|would want)|i(?:'ll|\s+will)\s+(go with|take)|let'?s\s+(go with|do))\s+(the\s+)?(bloom|muse|icon|legend|queen|empress|goddess|standard|economy|executive|gold|platinum|vip|vvip)(\s+(package|edition))?\b/.test(message.toLowerCase());
+    return /(i\s+(like|want|choose|will take|would like|would want)|i(?:'ll|\s+will)\s+(go with|take)|let'?s\s+(go with|do))\s+(the\s+)?(aura|bloom|muse|icon|legend|queen|empress|goddess|standard|economy|executive|gold|platinum|vip|vvip)(\s+(package|edition))?\b/i.test(message);
   }
 
   isSameBookingSlotRequest(message: string): boolean {

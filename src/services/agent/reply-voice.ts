@@ -48,11 +48,11 @@ export function repeatedCollectionQuestion(
   const repeatsName = isUsableName(name) && asksForName;
   const asksEditionChoice =
     /\b(?:which|what)\s+(?:package|edition)\b/i.test(reply)
-    || /\b(?:bloom|muse|icon|legend|queen|empress|goddess)\b[\s\S]{0,40}\bor\b[\s\S]{0,40}\b(?:bloom|muse|icon|legend|queen|empress|goddess)\b/i.test(reply)
+    || /\b(?:aura|bloom|muse|icon|legend|queen|empress|goddess)\b[\s\S]{0,40}\bor\b[\s\S]{0,40}\b(?:aura|bloom|muse|icon|legend|queen|empress|goddess)\b/i.test(reply)
     || /\b(?:looking to book|would you like to book|prefer a different edition)\b/i.test(reply);
   const userAlreadyNamedEdition =
-    /\b(?:bloom|muse|icon|legend|queen|empress|goddess)\b/i.test(userMessage)
-    && /\b(?:already|said|chose|chosen|choosen|picked|selected|muse|bloom|icon|legend|queen|empress|goddess)\b/i.test(userMessage);
+    /\b(?:aura|bloom|muse|icon|legend|queen|empress|goddess)\b/i.test(userMessage)
+    && /\b(?:already|said|chose|chosen|choosen|picked|selected|aura|muse|bloom|icon|legend|queen|empress|goddess)\b/i.test(userMessage);
   const repeatsEdition = asksEditionChoice && (Boolean(draft.service) || userAlreadyNamedEdition);
   if (!repeatsName && !repeatsEdition) return null;
   if (!draft.service && !userAlreadyNamedEdition) return 'Which edition would you like to consider?';

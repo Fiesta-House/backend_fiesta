@@ -322,7 +322,7 @@ function scanStatedSlots(
     /\b(?:interested in|i want|i would want|i choose|i would like|i'll take|please book|actually|let'?s (?:do|go with))\b/i.test(
       message
     ) ||
-    /^(?:the\s+)?(?:bloom|muse|icon|legend|queen|empress|goddess)(?:\s+package)?[.! ]*$/i.test(
+    /^(?:the\s+)?(?:aura|bloom|muse|icon|legend|queen|empress|goddess)(?:\s+package)?[.! ]*$/i.test(
       message
     ) ||
     Boolean(selectedEdition(message)) ||

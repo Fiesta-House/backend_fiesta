@@ -1,4 +1,6 @@
 export const SERVICE_DURATIONS: Record<string, number> = {
+  'aura': 60,
+  'the aura': 60,
   'bloom': 90,
   'the bloom': 90,
   'muse': 120,
@@ -21,14 +23,14 @@ export const BOOKING_SLOT_RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
 
 /** Current Editions 2026 + legacy names for extraction / matching */
 export const PACKAGE_NAME_PATTERN =
-  'bloom|muse|icon|legend|queen|empress|goddess|standard|economy|executive|gold|platinum|vip|vvip';
+  'aura|bloom|muse|icon|legend|queen|empress|goddess|standard|economy|executive|gold|platinum|vip|vvip';
 
 export const PACKAGE_NAMES_FOR_EXTRACTION = [
-  'THE BLOOM', 'THE MUSE', 'THE ICON', 'THE LEGEND',
+  'THE AURA', 'THE BLOOM', 'THE MUSE', 'THE ICON', 'THE LEGEND',
   'THE QUEEN', 'THE EMPRESS', 'THE GODDESS',
 ] as const;
 
-export const EDITIONS_PENDING_OWNER_CONFIRMATION: readonly string[] = ['THE EMPRESS'];
+export const EDITIONS_PENDING_OWNER_CONFIRMATION: readonly string[] = [];
 
 /** Priced optional add-ons (settle with balance — not included in deposit) */
 export interface AddonCatalogItem {
@@ -100,6 +102,7 @@ export const ADDON_CATALOG: AddonCatalogItem[] = [
     group: 'Styling & wardrobe',
     description: 'Hire of a wig styled by the studio. A specific wig is only promised once the team confirms it is available.',
     bookInAdvance: true,
+    includedIn: ['THE QUEEN', 'THE EMPRESS', 'THE GODDESS'],
   },
   {
     sku: 'wig_styling',

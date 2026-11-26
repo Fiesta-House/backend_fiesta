@@ -155,7 +155,7 @@ export async function getPackageAdviceReply(userMessage: string): Promise<string
     if (first.images !== second.images) differences.push(`${first.name} includes ${first.images} edited images and ${second.name} includes ${second.images}`);
     if (first.duration !== second.duration) differences.push(`${first.name} is ${first.duration}, while ${second.name} is ${second.duration}`);
     if (first.photobook !== second.photobook) differences.push(second.photobook ? `${second.name} includes an ${second.photobookSize || ''} photobook`.replace('an  photobook', 'a photobook') : `${first.name} includes an ${first.photobookSize || ''} photobook`.replace('an  photobook', 'a photobook'));
-    if (first.mount !== second.mount) differences.push(first.mount ? `${first.name} includes an A3 mount` : `${second.name} includes an A3 mount`);
+    if (first.mount !== second.mount) differences.push(first.mount ? `${first.name} includes a fine-art mount` : `${second.name} includes a fine-art mount`);
 
     const higherValuePackage = first.price >= second.price ? first : second;
     const lowerCostPackage = higherValuePackage === first ? second : first;
@@ -163,7 +163,7 @@ export async function getPackageAdviceReply(userMessage: string): Promise<string
   }
 
   const higherValue = packages.find((pkg) => ['the empress', 'the goddess', 'the queen', 'the legend'].includes(pkg.name.toLowerCase())) || packages[packages.length - 1];
-  const lowerCost = packages.find((pkg) => ['the icon', 'the muse', 'the bloom'].includes(pkg.name.toLowerCase())) || packages[0];
+  const lowerCost = packages.find((pkg) => ['the aura', 'the bloom', 'the muse', 'the icon'].includes(pkg.name.toLowerCase())) || packages[0];
   if (!higherValue || !lowerCost) return null;
 
   const higherPhotobookInfo = higherValue.photobook ? ` and a photobook` : '';
@@ -276,6 +276,7 @@ export async function getSameBookingSlotReply(
 }
 
 export const DEFAULT_PACKAGE_PRICES: Record<string, number> = {
+  'THE AURA': 10000,
   'THE BLOOM': 15000,
   'THE MUSE': 25000,
   'THE ICON': 35000,
@@ -286,6 +287,7 @@ export const DEFAULT_PACKAGE_PRICES: Record<string, number> = {
 };
 
 export const CANONICAL_PACKAGE_NAMES = [
+  'THE AURA',
   'THE BLOOM',
   'THE MUSE',
   'THE ICON',
@@ -363,7 +365,7 @@ export function isPackageChangeRequest(message: string, history: Array<{ role: '
 
   const lastAssistant = [...history].reverse().find(m => m.role === 'assistant')?.content || '';
   if (lastAssistant.includes(CARRY_OVER_PREFIX)) {
-    if (/\b\d{2,3}\s*k\b|\b\d{5,6}\b|\b\d{1,3},\d{3}\b|\b(?:the\s+)?(?:bloom|muse|icon|legend|queen|empress|goddess)\b/i.test(text)) {
+    if (/\b\d{2,3}\s*k\b|\b\d{5,6}\b|\b\d{1,3},\d{3}\b|\b(?:the\s+)?(?:aura|bloom|muse|icon|legend|queen|empress|goddess)\b/i.test(text)) {
       return true;
     }
   }
@@ -394,7 +396,7 @@ export async function getPackageChangeReply(
 
   if ('unknownPrice' in parsed) {
     return {
-      reply: `We don't have an edition at Ksh ${parsed.unknownPrice.toLocaleString()}. Our editions are Bloom (15k), Muse (25k), Icon (35k), Legend (45k), Queen (55k), Empress (70k), and Goddess (120k). You can view details here: ${OFFICIAL_WEBSITE_URLS.packages}`,
+      reply: `We don't have an edition at Ksh ${parsed.unknownPrice.toLocaleString()}. Our editions are Aura (10k), Bloom (15k), Muse (25k), Icon (35k), Legend (45k), Queen (55k), Empress (70k), and Goddess (120k). You can view details here: ${OFFICIAL_WEBSITE_URLS.packages}`,
     };
   }
 
